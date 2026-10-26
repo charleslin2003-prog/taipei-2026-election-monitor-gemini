@@ -237,15 +237,12 @@
                             2026 台北市長選戰即時新聞、抹黑攻防與社群爆文追蹤儀表板
                         </h2>
                         <p class="text-xs sm:text-sm text-slate-600 mt-1">
-                            整合主流新聞、Threads、PTT (HatePolitics) 與 YouTube 政論直播。支援 <strong>AI Google Search 即時聯網抓取</strong>、<strong>背景自動推播模擬</strong> 與 <strong>Git JSON 同步</strong>。
+                            整合主流新聞、Threads、PTT (HatePolitics) 與 YouTube 政論直播。支援 <strong>背景自動推播模擬</strong> 與 <strong>Git JSON 同步</strong>。
                         </p>
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="flex flex-wrap items-center gap-2 shrink-0">
-                        <button onclick="triggerAILiveScan()" id="btn-ai-scan" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xs transition flex items-center">
-                            <i class="fas fa-globe mr-1.5"></i> AI 聯網抓取最新選情
-                        </button>
                         <button onclick="simulateLiveStreamItem()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xs transition flex items-center">
                             <i class="fas fa-bolt mr-1.5"></i> 立即推播一則新輿情
                         </button>
@@ -259,12 +256,7 @@
                 </div>
 
                 <!-- Config Strip for Static GitHub Pages Hosting -->
-                <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-500">
-                    <div class="flex items-center space-x-2">
-                        <i class="fas fa-key text-slate-400"></i>
-                        <span class="shrink-0">Gemini API Key (供 GitHub Pages 外部網域聯網檢索)：</span>
-                        <input type="password" id="custom-gemini-key" placeholder="選填：AIzaSy... (留空則使用內建即時引擎)" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs w-full focus:outline-none focus:border-slate-800">
-                    </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-1 gap-3 text-xs text-slate-500">
                     <div class="flex items-center space-x-2">
                         <i class="fab fa-github text-slate-400"></i>
                         <span class="shrink-0">遠端資料源 (Raw JSON)：</span>
@@ -1407,14 +1399,25 @@ jobs:
         }
 
         // ================= 3. LIVE TRACKER & AUTO-STREAM ENGINE =================
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character]);
+        }
+
         function renderLiveFeed(filterPlatform = 'all', keyword = '') {
             const container = document.getElementById('live-feed-container');
             if (!container) return;
             container.innerHTML = '';
 
             const filtered = liveFeedData.filter(item => {
-                const matchPlatform = filterPlatform === 'all' || item.platform.includes(filterPlatform);
-                const matchKeyword = !keyword || item.title.includes(keyword) || item.desc.includes(keyword);
+                if (!item || typeof item !== 'object') return false;
+                const matchPlatform = filterPlatform === 'all' || String(item.platform ?? '').includes(filterPlatform);
+                const matchKeyword = !keyword || String(item.title ?? '').includes(keyword) || String(item.desc ?? '').includes(keyword);
                 return matchPlatform && matchKeyword;
             });
 
@@ -1441,14 +1444,14 @@ jobs:
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
                         <div class="flex items-center space-x-2">
                             ${idx === 0 ? '<span class="px-1.5 py-0.5 bg-red-600 text-white rounded text-[10px] font-black">NEW</span>' : ''}
-                            <span class="text-[11px] font-mono text-slate-400">${item.time}</span>
-                            <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-800 text-[11px] font-bold">${item.platform}</span>
+                            <span class="text-[11px] font-mono text-slate-400">${escapeHTML(item.time)}</span>
+                            <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-800 text-[11px] font-bold">${escapeHTML(item.platform)}</span>
                             ${badge}
                         </div>
-                        <span class="text-[11px] font-bold text-amber-600"><i class="fas fa-fire mr-1"></i>爆發力 ${item.score}</span>
+                        <span class="text-[11px] font-bold text-amber-600"><i class="fas fa-fire mr-1"></i>爆發力 ${escapeHTML(item.score)}</span>
                     </div>
-                    <h4 class="text-sm font-black text-slate-900 mb-1">${item.title}</h4>
-                    <p class="text-xs text-slate-600 leading-relaxed">${item.desc}</p>
+                    <h4 class="text-sm font-black text-slate-900 mb-1">${escapeHTML(item.title)}</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">${escapeHTML(item.desc)}</p>
                 `;
                 container.appendChild(div);
             });
@@ -1528,7 +1531,7 @@ jobs:
                 attacksEl.innerHTML = `${(curAttack + Math.floor(Math.random() * 35 + 12)).toLocaleString()} <span class="text-xs font-normal text-slate-500">筆攻擊</span>`;
             }
             if (tickerEl) {
-                tickerEl.textContent = `[即時同步 ${item.time.split(' ')[1]}] ${item.platform}：${item.title}`;
+                tickerEl.textContent = `[即時同步 ${String(item.time ?? '').split(' ')[1] || ''}] ${item.platform}：${item.title}`;
             }
             if (syncEl) {
                 const now = new Date();
@@ -1589,62 +1592,6 @@ jobs:
                 text.textContent = '停止自動即時流 (運行中)';
                 if (badge) badge.textContent = 'AUTO-STREAM 運行中';
                 showToast('🚀 已啟動每 10 秒自動輿情推播引擎！');
-            }
-        }
-
-        async function triggerAILiveScan() {
-            const btn = document.getElementById('btn-ai-scan');
-            const customKeyInput = document.getElementById('custom-gemini-key');
-            const apiKey = (customKeyInput && customKeyInput.value.trim()) ? customKeyInput.value.trim() : "";
-
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1.5"></i> AI 聯網檢索中...`;
-
-            const systemPrompt = "你是一位台灣選舉輿情分析專家。請根據最新網路資訊，整理出1則關於「蔣萬安」或「沈伯洋」台北市長選戰的最新攻防或新聞摘要。請以 JSON 格式回傳，包含 title (標題), platform (主流新聞/Threads/PTT/YouTube), type (chiang-neg/shen-neg/both-attack/policy), score (85-99數字), desc (80字內摘要與查核)。";
-            const userQuery = "搜尋最新 蔣萬安 沈伯洋 台北市長 選舉 新聞 民調 攻防 爭議";
-
-            try {
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    tools: [{ "google_search": {} }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                    generationConfig: { responseMimeType: "application/json" }
-                };
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) throw new Error('Fallback to built-in stream');
-                const result = await response.json();
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                const parsed = JSON.parse(text);
-
-                const now = new Date();
-                const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-                const aiItem = {
-                    id: Date.now(),
-                    time: timeStr,
-                    platform: parsed.platform || "主流新聞 (AI檢索)",
-                    type: parsed.type || "both-attack",
-                    score: parsed.score || 94,
-                    title: parsed.title || "AI 即時檢索：台北市長選戰最新攻防動態",
-                    desc: parsed.desc || "透過 Google Search Grounding 檢索之最新選戰輿情摘要。"
-                };
-
-                liveFeedData.unshift(aiItem);
-                renderLiveFeed('all');
-                updateLiveMetricsAfterNewItem(aiItem);
-                showToast('🛰️ AI Google Search 聯網檢索完成！');
-            } catch (err) {
-                simulateLiveStreamItem();
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-globe mr-1.5"></i> AI 聯網抓取最新選情`;
             }
         }
 
@@ -1954,7 +1901,7 @@ jobs:
         }
 
         function downloadReadmeMD() {
-            const md = `# 2026 台北市長選戰即時戰情室 (蔣萬安 vs. 沈伯洋)\n\n本專案為單一檔案架構 (Single-File SPA) 之即時選情追蹤與司法鑑識級履歷查核儀表板。\n\n## 核心功能\n1. **即時輿情雷達 (Live War Room)**：支援 AI Google Search 即時檢索、每10秒自動推播模擬引擎與遠端 GitHub JSON 同步。\n2. **得票率沙盤推演器**：動態調整青年投票率、高齡長者投票率、白營流向與辯論表現。\n3. **17.1萬筆 QSearch 互相抹黑統計**：跨新聞、YouTube、Threads 與 PTT 負面情緒率分析。\n4. **司法級個資與履歷查核**：比對加州律師公會 #254347 紀錄、LinkedIn 時程與立院公報。\n\n## 快速部署至 GitHub Pages\n直接將 \`index.html\` 推送至 \`main\` 分支並開啟 GitHub Pages 即可運行。\n`;
+            const md = `# 2026 台北市長選戰即時戰情室 (蔣萬安 vs. 沈伯洋)\n\n本專案為單一檔案架構 (Single-File SPA) 之即時選情追蹤與司法鑑識級履歷查核儀表板。\n\n## 核心功能\n1. **即時輿情雷達 (Live War Room)**：支援每10秒自動推播模擬引擎與遠端 GitHub JSON 同步。\n2. **得票率沙盤推演器**：動態調整青年投票率、高齡長者投票率、白營流向與辯論表現。\n3. **17.1萬筆 QSearch 互相抹黑統計**：跨新聞、YouTube、Threads 與 PTT 負面情緒率分析。\n4. **司法級個資與履歷查核**：比對加州律師公會 #254347 紀錄、LinkedIn 時程與立院公報。\n\n## 快速部署至 GitHub Pages\n直接將 \`index.html\` 推送至 \`main\` 分支並開啟 GitHub Pages 即可運行。\n`;
             const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
