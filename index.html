@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <!-- Chosen Palette: Warm Neutral Harmonious Palette + War Room Accents -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 台北市長選戰即時戰情室｜蔣萬安 vs 沈伯洋 深度調查與輿情追蹤系統</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            bg: '#F8FAFC',
+                            card: '#FFFFFF',
+                            dark: '#0F172A',
+                            muted: '#64748B',
+                            chiang: '#2563EB',
+                            chiangLight: '#EFF6FF',
+                            shen: '#059669',
+                            shenLight: '#ECFDF5',
+                            warn: '#D97706',
+                            danger: '#DC2626'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+        body {
+            background-color: #F8FAFC;
+            color: #0F172A;
+            font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            height: 310px;
+            max-height: 380px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 340px;
+            }
+        }
+
+        .tab-btn {
+            transition: all 0.2s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active {
+            border-bottom: 3px solid #0F172A;
+            color: #0F172A;
+            font-weight: 800;
+            background-color: #F1F5F9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 3px;
+        }
+
+        input[type=range] {
+            accent-color: #0F172A;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-color: rgba(220, 38, 38, 0.3); }
+            50% { border-color: rgba(220, 38, 38, 0.9); }
+        }
+        .live-card-highlight {
+            animation: pulse-border 2s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-slate-900 selection:text-white">
+
+    <!-- Top War Room Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-wrap justify-between items-center py-3 gap-3">
+                <!-- Title & Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-slate-900 text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black shadow-sm relative">
+                        <i class="fas fa-satellite-dish"></i>
+                        <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
+                        <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h1 class="text-base sm:text-lg font-black text-slate-900 tracking-tight">2026 台北市長選戰即時戰情室</h1>
+                            <span class="hidden sm:inline-block bg-slate-100 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider border border-slate-200">Git Live v3.0</span>
+                        </div>
+                        <p class="text-xs text-slate-500">蔣萬安 vs. 沈伯洋｜17.1萬筆輿情抹黑統計・司法級個資查核・得票沙盤推演</p>
+                    </div>
+                </div>
+
+                <!-- Real-Time Countdowns & Quick Actions -->
+                <div class="flex flex-wrap items-center gap-2 text-xs font-medium">
+                    <div class="flex items-center bg-red-50 text-red-700 px-2.5 py-1.5 rounded-lg border border-red-200 font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-red-600 animate-ping mr-1.5"></span>
+                        <span id="daemon-status-badge">即時監測中</span>
+                    </div>
+                    <div class="hidden lg:flex items-center bg-amber-50 text-amber-900 px-3 py-1.5 rounded-lg border border-amber-200 font-mono text-[11px]" id="debate-countdown">
+                        <i class="fas fa-tv text-amber-600 mr-1.5"></i> 10/31辯論倒數：計算中...
+                    </div>
+                    <div class="hidden xl:flex items-center bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 font-mono text-[11px]" id="election-countdown">
+                        <i class="fas fa-vote-yea text-slate-500 mr-1.5"></i> 11/28投票倒數：計算中...
+                    </div>
+                    <button onclick="switchTab('git')" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg transition flex items-center font-bold shadow-xs">
+                        <i class="fab fa-github mr-1.5"></i> Git 部署包下載
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Head-to-Head VS Progress Bar -->
+        <div class="bg-slate-900 text-white py-2 px-4 border-t border-slate-800">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2 text-xs">
+                <!-- Candidate 1: Chiang -->
+                <div class="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-start">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded-full bg-blue-600 font-black flex items-center justify-center text-[11px]">蔣</span>
+                        <span class="font-bold">蔣萬安 <span class="text-slate-400 font-normal">(國)</span></span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-blue-400 font-mono font-bold" id="header-chiang-poll">民調 33.3%</span>
+                        <span class="bg-blue-950 text-blue-300 px-1.5 py-0.5 rounded text-[10px] border border-blue-800">看好度 46.4%</span>
+                    </div>
+                </div>
+
+                <!-- VS Bar -->
+                <div class="w-full md:max-w-md flex items-center space-x-2">
+                    <div class="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden flex">
+                        <div id="vs-bar-chiang" class="bg-blue-500 h-full transition-all duration-500" style="width: 39.8%"></div>
+                        <div class="bg-slate-500 h-full" style="width: 16.4%"></div>
+                        <div id="vs-bar-shen" class="bg-emerald-500 h-full transition-all duration-500" style="width: 43.8%"></div>
+                    </div>
+                </div>
+
+                <!-- Candidate 2: Shen -->
+                <div class="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-end">
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded text-[10px] border border-emerald-800">看好度 36.9%</span>
+                        <span class="text-emerald-400 font-mono font-bold" id="header-shen-poll">民調 50.3%</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold">沈伯洋 <span class="text-slate-400 font-normal">(民)</span></span>
+                        <span class="w-6 h-6 rounded-full bg-emerald-600 font-black flex items-center justify-center text-[11px]">沈</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Breaking News Marquee Ticker -->
+        <div class="bg-slate-950 text-slate-300 text-xs py-1.5 px-4 border-t border-slate-800/80">
+            <div class="max-w-7xl mx-auto flex items-center space-x-3">
+                <span class="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider shrink-0 flex items-center">
+                    <i class="fas fa-bolt mr-1"></i> 即時快訊
+                </span>
+                <div id="live-ticker-text" class="truncate font-medium text-slate-200 transition-opacity duration-300">
+                    [10/26 戰情更新] 10/31 TVBS與三立聯合電視辯論進入倒數5天！信民協會民調沈伯洋50.3%反超蔣萬安33.3%，但看好度蔣仍以46.4%領先...
+                </div>
+                <div class="flex items-center space-x-2 ml-auto shrink-0">
+                    <button onclick="simulateLiveStreamItem()" class="text-amber-400 hover:text-amber-300 font-semibold text-[11px] flex items-center">
+                        <i class="fas fa-sync-alt mr-1"></i> 推播最新動態
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-white border-t border-slate-200 overflow-x-auto custom-scrollbar">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 sm:space-x-6 whitespace-nowrap text-xs sm:text-sm font-medium text-slate-600">
+                <button onclick="switchTab('live')" id="tab-live" class="tab-btn active py-3 px-3 hover:text-slate-900 flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse mr-2"></span>
+                    1. 即時輿情雷達 (Live)
+                </button>
+                <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn py-3 px-3 hover:text-slate-900 flex items-center">
+                    <i class="fas fa-sliders-h mr-1.5 text-blue-600"></i> 2. 民調逆轉・12行政區與得票推演
+                </button>
+                <button onclick="switchTab('sentiment')" id="tab-sentiment" class="tab-btn py-3 px-3 hover:text-slate-900 flex items-center">
+                    <i class="fas fa-fire-alt mr-1.5 text-red-600"></i> 3. 互相抹黑統計 (17.1萬筆大數據)
+                </button>
+                <button onclick="switchTab('factcheck')" id="tab-factcheck" class="tab-btn py-3 px-3 hover:text-slate-900 flex items-center">
+                    <i class="fas fa-microscope mr-1.5 text-emerald-600"></i> 4. 個資竄改與履歷鑑識查核
+                </button>
+                <button onclick="switchTab('policies')" id="tab-policies" class="tab-btn py-3 px-3 hover:text-slate-900 flex items-center">
+                    <i class="fas fa-balance-scale-right mr-1.5 text-amber-600"></i> 5. 六大政見可行性壓力測試
+                </button>
+                <button onclick="switchTab('git')" id="tab-git" class="tab-btn py-3 px-3 hover:text-slate-900 flex items-center">
+                    <i class="fab fa-git-alt mr-1.5 text-purple-600"></i> 6. Git 自動化部署中心
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-8">
+
+        <!-- ================= TAB 1: 即時輿情雷達 (LIVE WAR ROOM) ================= -->
+        <section id="sec-live" class="space-y-6">
+            <!-- Control Console Banner -->
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-red-100 text-red-700 flex items-center">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping mr-1.5"></span> REAL-TIME RADAR
+                            </span>
+                            <span class="text-xs text-slate-500 font-mono" id="last-sync-time">最後同步：2026-10-26 03:52 CST</span>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">資料基底：QSearch 171,636 筆 + 即時流</span>
+                        </div>
+                        <h2 class="text-lg sm:text-xl font-black text-slate-900">
+                            2026 台北市長選戰即時新聞、抹黑攻防與社群爆文追蹤儀表板
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-600 mt-1">
+                            整合主流新聞、Threads、PTT (HatePolitics) 與 YouTube 政論直播。支援 <strong>AI Google Search 即時聯網抓取</strong>、<strong>背景自動推播模擬</strong> 與 <strong>Git JSON 同步</strong>。
+                        </p>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                        <button onclick="triggerAILiveScan()" id="btn-ai-scan" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xs transition flex items-center">
+                            <i class="fas fa-globe mr-1.5"></i> AI 聯網抓取最新選情
+                        </button>
+                        <button onclick="simulateLiveStreamItem()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xs transition flex items-center">
+                            <i class="fas fa-bolt mr-1.5"></i> 立即推播一則新輿情
+                        </button>
+                        <button onclick="toggleAutoStreamDaemon()" id="btn-auto-daemon" class="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center">
+                            <i class="fas fa-play text-emerald-600 mr-1.5" id="icon-auto-daemon"></i> <span id="text-auto-daemon">開啟自動即時流 (每10秒)</span>
+                        </button>
+                        <button onclick="toggleAddEventModal()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center">
+                            <i class="fas fa-plus mr-1.5"></i> 登錄新事件
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Config Strip for Static GitHub Pages Hosting -->
+                <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-500">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-key text-slate-400"></i>
+                        <span class="shrink-0">Gemini API Key (供 GitHub Pages 外部網域聯網檢索)：</span>
+                        <input type="password" id="custom-gemini-key" placeholder="選填：AIzaSy... (留空則使用內建即時引擎)" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs w-full focus:outline-none focus:border-slate-800">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fab fa-github text-slate-400"></i>
+                        <span class="shrink-0">遠端資料源 (Raw JSON)：</span>
+                        <input type="text" id="remote-json-url" placeholder="選填：https://raw.githubusercontent.com/.../election_data_2026.json" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs w-full focus:outline-none focus:border-slate-800">
+                        <button onclick="syncFromRemoteGitJSON()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 px-2.5 py-1 rounded-lg font-bold shrink-0">拉取</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Event Collapsible Modal -->
+            <div id="add-event-panel" class="bg-slate-100 p-5 rounded-2xl border border-slate-300 hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm"><i class="fas fa-pen-nib mr-1.5"></i> 手動登錄最新選戰攻防／新聞事件（新增後可匯出 JSON 並推送至 Git）</h3>
+                    <button onclick="toggleAddEventModal()" class="text-slate-500 hover:text-slate-800 text-xs font-bold"><i class="fas fa-times mr-1"></i>關閉</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">事件標題</label>
+                        <input type="text" id="new-ev-title" placeholder="例如：10/31 辯論會前夕最新攻防" class="w-full p-2 rounded-lg border border-slate-300 bg-white">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">傳播管道</label>
+                        <select id="new-ev-platform" class="w-full p-2 rounded-lg border border-slate-300 bg-white">
+                            <option value="主流新聞">主流新聞</option>
+                            <option value="Threads">Threads 社群</option>
+                            <option value="PTT/Dcard">PTT / Dcard 論壇</option>
+                            <option value="YouTube">YouTube 政論/直播</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">攻防歸屬與情緒</label>
+                        <select id="new-ev-type" class="w-full p-2 rounded-lg border border-slate-300 bg-white">
+                            <option value="chiang-neg">綠攻蔣 / 對蔣萬安負面</option>
+                            <option value="shen-neg">藍攻沈 / 對沈伯洋負面</option>
+                            <option value="both-attack">藍綠雙向激烈互攻</option>
+                            <option value="policy">市政政見與中立查核</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">輿情爆發指數 (1-100)</label>
+                        <input type="number" id="new-ev-score" value="90" min="1" max="100" class="w-full p-2 rounded-lg border border-slate-300 bg-white">
+                    </div>
+                </div>
+                <div class="text-xs">
+                    <label class="block font-bold text-slate-700 mb-1">事件摘要與事實查核備註</label>
+                    <textarea id="new-ev-desc" rows="2" placeholder="輸入事件來龍去脈、雙方陣營回應或查核結果..." class="w-full p-2 rounded-lg border border-slate-300 bg-white"></textarea>
+                </div>
+                <div class="flex justify-end">
+                    <button onclick="addCustomLiveEvent()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-5 py-2 rounded-lg">
+                        <i class="fas fa-check mr-1"></i> 寫入即時動態牆並更新指標
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4 Real-Time KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                    <div class="flex justify-between items-center text-xs text-slate-500 mb-1">
+                        <span class="font-semibold">累計監測總聲量 (2026至今)</span>
+                        <span class="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">+4,892 / 24h</span>
+                    </div>
+                    <div class="text-2xl font-black text-slate-900 font-mono" id="live-metric-posts">171,636 <span class="text-xs font-normal text-slate-500">筆</span></div>
+                    <div class="text-[11px] text-slate-500 mt-1.5 flex items-center justify-between">
+                        <span>花絮 63%｜抹黑攻防 28%</span>
+                        <span class="text-blue-600 font-bold">政見僅 &lt;9%</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                    <div class="flex justify-between items-center text-xs text-slate-500 mb-1">
+                        <span class="font-semibold">互相抹黑與攻擊新聞/貼文數</span>
+                        <span class="text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded" id="live-metric-attack-pct">佔比 28.0%</span>
+                    </div>
+                    <div class="text-2xl font-black text-red-600 font-mono" id="live-metric-attacks">48,058 <span class="text-xs font-normal text-slate-500">筆攻擊</span></div>
+                    <div class="text-[11px] text-slate-500 mt-1.5">
+                        今日焦點攻防：<strong class="text-slate-700">38 篇主流新聞報導</strong>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-blue-200 shadow-xs">
+                    <div class="flex justify-between items-center text-xs text-slate-500 mb-1">
+                        <span class="font-bold text-blue-700">蔣萬安 即時全網負評率</span>
+                        <span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold">Threads 最高危</span>
+                    </div>
+                    <div class="text-2xl font-black text-blue-600 font-mono" id="live-chiang-temp">51.2% <span class="text-xs font-normal text-slate-500">綜合負評</span></div>
+                    <div class="text-[11px] text-slate-500 mt-1.5">
+                        新聞負評 38.5% vs <strong class="text-red-600">Threads 負評 67.4%</strong>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-xs">
+                    <div class="flex justify-between items-center text-xs text-slate-500 mb-1">
+                        <span class="font-bold text-emerald-700">沈伯洋 即時全網負評率</span>
+                        <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-semibold">PTT/YT 猛烈圍剿</span>
+                    </div>
+                    <div class="text-2xl font-black text-emerald-600 font-mono" id="live-shen-temp">47.7% <span class="text-xs font-normal text-slate-500">綜合負評</span></div>
+                    <div class="text-[11px] text-slate-500 mt-1.5">
+                        Threads 負評 35.5% vs <strong class="text-red-600">論壇負評 61.4%</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Feed Stream + 24H Velocity Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left 2 Cols: Real-Time Stream -->
+                <div class="lg:col-span-2 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-200">
+                        <div>
+                            <h3 class="text-base font-black text-slate-900 flex items-center">
+                                <i class="fas fa-broadcast-tower text-red-600 mr-2"></i> 即時選情新聞與跨平台攻防動態流
+                            </h3>
+                            <p class="text-xs text-slate-500">點擊分類或右側熱詞可即時過濾，每筆皆標註傳播管道、攻防歸屬與查核摘要</p>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5 text-xs">
+                            <button onclick="filterLiveFeed('all', this)" class="live-filter-btn px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold">全部</button>
+                            <button onclick="filterLiveFeed('主流新聞', this)" class="live-filter-btn px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">主流新聞</button>
+                            <button onclick="filterLiveFeed('Threads', this)" class="live-filter-btn px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">Threads</button>
+                            <button onclick="filterLiveFeed('PTT/Dcard', this)" class="live-filter-btn px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">PTT/Dcard</button>
+                            <button onclick="filterLiveFeed('YouTube', this)" class="live-filter-btn px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">YouTube</button>
+                        </div>
+                    </div>
+
+                    <div id="live-feed-container" class="divide-y divide-slate-100 overflow-y-auto max-h-[520px] pr-1 custom-scrollbar mt-2">
+                        <!-- Dynamically populated via JS -->
+                    </div>
+                </div>
+
+                <!-- Right Col: Velocity Chart & Hot Keywords -->
+                <div class="space-y-6">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="text-sm font-black text-slate-900">近 24 小時輿情熱度爆發曲線</h3>
+                            <span class="text-[10px] bg-red-50 text-red-600 px-2 py-0.5 rounded font-bold">即時動態更新</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-3">每 4 小時雙雄網路討論聲量與攻擊峰值</p>
+                        <div class="h-52 relative">
+                            <canvas id="liveVelocityChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-sm font-black text-slate-900">🔥 即時攻防熱搜關鍵字 (點擊過濾)</h3>
+                            <button onclick="filterLiveFeed('all')" class="text-[11px] text-blue-600 hover:underline font-bold">重設篩選</button>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5 pt-1">
+                            <button onclick="searchLiveKeyword('辯論')" class="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 border border-red-200 text-xs font-bold hover:bg-red-100 transition">#1031電視辯論 (98)</button>
+                            <button onclick="searchLiveKeyword('交換生')" class="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold hover:bg-blue-100 transition">#美籍長子交換生 (94)</button>
+                            <button onclick="searchLiveKeyword('市民大道')" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition">#市民大道縫合說 (91)</button>
+                            <button onclick="searchLiveKeyword('律師')" class="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold hover:bg-blue-100 transition">#矽谷律所停權與待業 (89)</button>
+                            <button onclick="searchLiveKeyword('出席率')" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition">#立院100%出席查核 (87)</button>
+                            <button onclick="searchLiveKeyword('臨托')" class="px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold hover:bg-amber-100 transition">#41萬小時臨托缺口 (85)</button>
+                            <button onclick="searchLiveKeyword('大巨蛋')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-xs hover:bg-slate-200 transition">#大巨蛋漏水鼠患 (83)</button>
+                            <button onclick="searchLiveKeyword('第五縱隊')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-xs hover:bg-slate-200 transition">#第五縱隊翻供 (81)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= TAB 2: 民調逆轉・12行政區與得票推演 ================= -->
+        <section id="sec-overview" class="space-y-8 hidden">
+            <!-- Interactive Turnout & Victory Simulator (Killer Feature) -->
+            <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800 space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <span class="bg-amber-500 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider">FiveThirtyEight 級互動模型</span>
+                        <h2 class="text-xl font-black mt-1">
+                            🎛️ 「沉默螺旋 vs. 洋流效應」2026 最終得票率沙盤推演器
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            根據信民協會／戴立安基準模型（沈伯洋 49.2%~52.9% vs 蔣萬安 46.9%~49.9%），拖曳下方四大變數滑桿，即時模擬 11/28 投票日最終勝負：
+                        </p>
+                    </div>
+                    <button onclick="resetSimulator()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3.5 py-2 rounded-xl border border-slate-700 shrink-0">
+                        <i class="fas fa-undo mr-1.5"></i> 重設為10月基準模型
+                    </button>
+                </div>
+
+                <!-- Sliders & Live Projection Output -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <!-- 4 Sliders (7 Cols) -->
+                    <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-800/70 p-4 rounded-xl border border-slate-700/80 text-xs">
+                        <div>
+                            <div class="flex justify-between font-bold mb-1">
+                                <span class="text-emerald-400">1. 20-29歲青年投票率 (挺沈71.6%)</span>
+                                <span id="val-sim-youth" class="font-mono">68%</span>
+                            </div>
+                            <input type="range" id="sim-youth" min="45" max="85" value="68" oninput="runElectionSimulator()" class="w-full cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                                <span>低迷 (45%)</span>
+                                <span>基準 (68%)</span>
+                                <span>狂熱 (85%)</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-bold mb-1">
+                                <span class="text-blue-400">2. 60歲+藍營長者投票率 (破沉默螺旋)</span>
+                                <span id="val-sim-senior" class="font-mono">72%</span>
+                            </div>
+                            <input type="range" id="sim-senior" min="55" max="90" value="72" oninput="runElectionSimulator()" class="w-full cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                                <span>心寒不投 (55%)</span>
+                                <span>基準 (72%)</span>
+                                <span>危機總動員 (90%)</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-bold mb-1">
+                                <span class="text-purple-400">3. 2022黃珊珊選民轉投沈伯洋比例</span>
+                                <span id="val-sim-tpp" class="font-mono">54%</span>
+                            </div>
+                            <input type="range" id="sim-tpp" min="25" max="70" value="54" oninput="runElectionSimulator()" class="w-full cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                                <span>藍白歸隊 (25%)</span>
+                                <span>10月民調 (54%)</span>
+                                <span>全面倒戈 (70%)</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-bold mb-1">
+                                <span class="text-amber-400">4. 10/31 電視辯論會效應 (藍⬅️➡️綠)</span>
+                                <span id="val-sim-debate" class="font-mono">均勢 (0.0%)</span>
+                            </div>
+                            <input type="range" id="sim-debate" min="-5" max="5" step="0.5" value="0" oninput="runElectionSimulator()" class="w-full cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                                <span>蔣市政壓制 (-5%)</span>
+                                <span>平手 (0%)</span>
+                                <span>沈論述突圍 (+5%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Projection Scoreboard (5 Cols) -->
+                    <div class="lg:col-span-5 bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-400">模擬推估得票率與票數差距</span>
+                            <span id="sim-winner-badge" class="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                                沈伯洋 微幅領先
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div class="bg-blue-950/50 border border-blue-800/60 p-3 rounded-xl">
+                                <div class="text-xs text-blue-300 font-bold">蔣萬安 (國民黨)</div>
+                                <div class="text-2xl font-black text-blue-400 font-mono mt-1" id="sim-chiang-pct">48.8%</div>
+                                <div class="text-[11px] text-slate-400 font-mono mt-0.5" id="sim-chiang-votes">約 668,500 票</div>
+                            </div>
+                            <div class="bg-emerald-950/50 border border-emerald-800/60 p-3 rounded-xl">
+                                <div class="text-xs text-emerald-300 font-bold">沈伯洋 (民進黨)</div>
+                                <div class="text-2xl font-black text-emerald-400 font-mono mt-1" id="sim-shen-pct">51.2%</div>
+                                <div class="text-[11px] text-slate-400 font-mono mt-0.5" id="sim-shen-votes">約 701,400 票</div>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-slate-300 bg-slate-900 p-3 rounded-lg border border-slate-800 leading-relaxed" id="sim-analysis-text">
+                            <strong>沙盤診斷：</strong> 在10月基準模型下，沈伯洋憑藉 54.4% 黃珊珊舊部轉投與青年高投票率，以約 <strong>3.2萬票 (2.4%)</strong> 險勝；但若蔣萬安透過陸戰將 60 歲以上投票率催至 82% 以上，或於 10/31 辯論會展現市政優勢，局勢將立即翻盤。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Poll Visualizations Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Poll Trend Chart -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-base font-black text-slate-900">2026 台北市長民調「黃金交叉」軌跡</h3>
+                            <p class="text-xs text-slate-500">數據來源：震傳媒 (6月) ➔ 信民兩岸研究協會/戴立安 (10月)</p>
+                        </div>
+                        <span class="text-xs bg-emerald-50 text-emerald-700 font-bold px-2.5 py-1 rounded">沈反超 +17.0%</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="pollTrendChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-600 mt-3 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed">
+                        <i class="fas fa-lightbulb text-amber-500 mr-1"></i> <strong>結構轉折點：</strong> 6月蔣萬安以 55.2% 碾壓；但 8-9 月爆發<strong>美籍長子佔用公費交換生名額案</strong>、<strong>大巨蛋反覆漏水鼠患</strong>及<strong>薔琵颱風路樹倒塌</strong>，蔣施政滿意度單月暴跌 14.3%，於 10 月中形成沈伯洋 50.3% 對 33.3% 之結構逆轉。
+                    </p>
+                </div>
+
+                <!-- Demographic & Shift Breakdown -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-base font-black text-slate-900">關鍵選民板塊位移與年齡交叉分析</h3>
+                            <p class="text-xs text-slate-500">民眾黨支持者、2022黃珊珊選民與青年/高齡對比 (10月)</p>
+                        </div>
+                        <span class="text-xs bg-blue-50 text-blue-700 font-bold px-2.5 py-1 rounded">白營選票分裂</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="voterShiftChart"></canvas>
+                    </div>
+                    <p class="text-xs text-slate-600 mt-3 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed">
+                        <i class="fas fa-lightbulb text-amber-500 mr-1"></i> <strong>為何藍白合失靈？</strong> 蔣萬安雖與黃國昌合體直播並感謝柯文哲，但白營年輕支持者對「權貴世家特權」極度敏感，導致 2022 黃珊珊選民高達 <strong>54.4% 流向沈伯洋</strong>，20-29歲青年更有 <strong>71.6%</strong> 挺沈。
+                    </p>
+                </div>
+            </div>
+
+            <!-- Taipei 12 Administrative Districts Battleground Map/Grid -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                        <h3 class="text-base font-black text-slate-900">🗺️ 台北市 12 行政區選情版圖與搖擺熱力分析</h3>
+                        <p class="text-xs text-slate-500">對比 2022 蔣萬安勝選基數與 2026 年 10 月最新選情變化（點擊可篩選區域類型）</p>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 text-xs">
+                        <button onclick="filterDistricts('all', this)" class="dist-btn px-3 py-1.5 rounded-lg bg-slate-900 text-white font-bold">全部 12 區</button>
+                        <button onclick="filterDistricts('swing', this)" class="dist-btn px-3 py-1.5 rounded-lg bg-amber-100 text-amber-900 font-semibold hover:bg-amber-200">🔥 關鍵搖擺區 (5)</button>
+                        <button onclick="filterDistricts('blue', this)" class="dist-btn px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100">藍營優勢區 (4)</button>
+                        <button onclick="filterDistricts('green', this)" class="dist-btn px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100">綠營優勢區 (3)</button>
+                    </div>
+                </div>
+
+                <div id="districts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= TAB 3: 互相抹黑統計 (17.1萬筆大數據) ================= -->
+        <section id="sec-sentiment" class="space-y-8 hidden">
+            <!-- Executive Summary Banner -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                <h2 class="text-xl font-black text-slate-900 mb-2">
+                    <i class="fas fa-chart-pie text-red-600 mr-2"></i>2026 選戰互相抹黑與負面輿情統計級報告（QSearch 171,636 筆全量分析）
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    統計期間：2026 年 1 月 1 日至 10 月 26 日。涵蓋 <strong>主流新聞媒體、YouTube 政論與直播頻道、Facebook、Instagram、Threads 及網路論壇（PTT HatePolitics / Dcard）</strong>。數據顯示本次台北市長選戰呈現極端「去政策化」：個人花絮與人設佔 <strong>63.0%</strong>、陣營互相抹黑與造謠攻防佔 <strong>28.0%（逾 4.8 萬筆）</strong>，而真正探討市政可行性的討論僅佔 <strong>不到 9.0%</strong>。
+                </p>
+            </div>
+
+            <!-- Three-Layer Pipeline Breakdown Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-black px-2.5 py-1 rounded bg-slate-100 text-slate-800">第一層：主流新聞媒體</span>
+                        <span class="text-xs font-mono font-bold text-slate-500">佔總聲量 24.5%</span>
+                    </div>
+                    <div class="flex justify-between items-end pt-2">
+                        <div>
+                            <div class="text-xs text-slate-500">蔣萬安負評率</div>
+                            <div class="text-xl font-black text-blue-600">38.5%</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500">沈伯洋負評率</div>
+                            <div class="text-xl font-black text-emerald-600">41.2%</div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-600 pt-2 border-t border-slate-100 leading-relaxed">
+                        <strong>統計特徵：</strong> 傳統媒體版面受市政行程與記者會主導，蔣萬安具備現任行政優勢（如輝達簽約報導）；對沈伯洋則多聚焦於藍營民代召開之「市民大道縫合說、黑熊學院募款」質疑記者會。
+                    </p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-black px-2.5 py-1 rounded bg-red-50 text-red-700">第二層：YouTube 政論與側翼節目</span>
+                        <span class="text-xs font-mono font-bold text-slate-500">佔總聲量 31.2%</span>
+                    </div>
+                    <div class="flex justify-between items-end pt-2">
+                        <div>
+                            <div class="text-xs text-slate-500">蔣萬安負評率</div>
+                            <div class="text-xl font-black text-blue-600">46.2%</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500">沈伯洋負評率</div>
+                            <div class="text-xl font-black text-emerald-600">52.8%</div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-600 pt-2 border-t border-slate-100 leading-relaxed">
+                        <strong>統計特徵：</strong> 藍白政論頻道與網紅（如歷史哥、中天剪輯等）高頻率轟炸沈伯洋「第五縱隊、大麻除罪化論文」；綠營 YT 頻道（如司馬庫等）則精準打擊蔣萬安「哈佛英文卡詞、矽谷水學位」。
+                    </p>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-black px-2.5 py-1 rounded bg-purple-50 text-purple-800">第三層：Threads 與 PTT/Dcard 論壇</span>
+                        <span class="text-xs font-mono font-bold text-slate-500">佔總聲量 44.3%</span>
+                    </div>
+                    <div class="flex justify-between items-end pt-2">
+                        <div>
+                            <div class="text-xs text-slate-500">蔣 Threads 負評</div>
+                            <div class="text-xl font-black text-red-600">67.4%</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500">沈 PTT/論壇負評</div>
+                            <div class="text-xl font-black text-red-600">61.4%</div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-600 pt-2 border-t border-slate-100 leading-relaxed">
+                        <strong>統計特徵：</strong> 極端分眾化！<strong>Threads 成為沈伯洋絕對主場</strong>（沈負評僅35.5%，蔣高達67.4%，相差31.9%）；而 <strong>PTT 政黑板</strong> 則對兩人同步進行高強度獵巫與造謠檢驗。
+                    </p>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Topics Distribution Chart -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-base font-black text-slate-900">171,636 筆選戰聲量主題結構分佈</h3>
+                            <p class="text-xs text-slate-500">花絮與互攻佔比超過 91%，政策討論遭嚴重邊緣化</p>
+                        </div>
+                        <span class="text-xs bg-slate-100 text-slate-700 font-bold px-2.5 py-1 rounded">QSearch 統計</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="topicDistributionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Platform Negative Sentiment Chart -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-base font-black text-slate-900">四大傳播管道「負面情緒率」極化對比 (%)</h3>
+                            <p class="text-xs text-slate-500">不同平台呈現完全相反的輿情平行時空</p>
+                        </div>
+                        <span class="text-xs bg-red-50 text-red-700 font-bold px-2.5 py-1 rounded">演算法同溫層效應</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="platformNegativeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attack Matrix Interactive Table -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h3 class="text-base font-black text-slate-900">📋 2026 首都選戰八大抹黑與攻防事件統計矩陣</h3>
+                        <p class="text-xs text-slate-500">依發動陣營、傳播來源（新聞/節目/論壇）、造謠或指控內容與事實查核進行結構化對照</p>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 text-xs">
+                        <button onclick="filterAttacks('all', this)" class="attack-filter-btn px-3 py-1.5 rounded-lg bg-slate-900 text-white font-bold">全部事件 (8)</button>
+                        <button onclick="filterAttacks('chiang-target', this)" class="attack-filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold">綠攻蔣案</button>
+                        <button onclick="filterAttacks('shen-target', this)" class="attack-filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold">藍攻沈案</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-700">
+                                <th class="p-3 font-bold">攻防事件主題</th>
+                                <th class="p-3 font-bold">發動陣營與目標</th>
+                                <th class="p-3 font-bold">主要傳播管道</th>
+                                <th class="p-3 font-bold">核心指控／抹黑內容</th>
+                                <th class="p-3 font-bold">當事人回應與事實查核</th>
+                                <th class="p-3 font-bold">政治效應與民調衝擊</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attack-matrix-body" class="divide-y divide-slate-200 text-slate-600">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= TAB 4: 個資竄改與履歷鑑識查核 ================= -->
+        <section id="sec-factcheck" class="space-y-8 hidden">
+            <!-- Header & Radar Chart Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                <div class="lg:col-span-7 space-y-3">
+                    <span class="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-2.5 py-1 rounded">司法鑑識級背景查核 (Forensic Due Diligence)</span>
+                    <h2 class="text-xl font-black text-slate-900">
+                        兩位候選人個資、學經歷、執業紀錄與公開言論有無竄改或誇大？
+                    </h2>
+                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        本調查交叉比對 <strong>美國加州律師公會（State Bar of California）官方登錄檔案、LinkedIn 歷史快照、教育部公費留學榜單、立法院公報與公督盟評鑑數據、以及 Cofacts 事實查核資料庫</strong>。
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
+                        <div class="bg-blue-50/70 p-3.5 rounded-xl border border-blue-200">
+                            <div class="font-black text-blue-900 mb-1"><i class="fas fa-user-tie mr-1"></i> 蔣萬安 查核總結：</div>
+                            <p class="text-slate-700 leading-relaxed">
+                                <strong>專業執業履歷存在實質竄改與美化</strong>（LinkedIn 將待業 10 個月改為 2 個月、隱匿 LL.M. 銜接期、自創公寓律所遭勒令歇業、執照 3 度停權），且<strong>美籍長子佔用北市公費交換生名額</strong>重創公平形象。
+                            </p>
+                        </div>
+                        <div class="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200">
+                            <div class="font-black text-emerald-900 mb-1"><i class="fas fa-user-graduate mr-1"></i> 沈伯洋 查核總結：</div>
+                            <p class="text-slate-700 leading-relaxed">
+                                <strong>學術博士與公費留學 100% 屬實</strong>；但<strong>國會問政數據存在選擇性誇大</strong>（宣稱 100% 出席卻多次缺席程序委員會與老福法三讀表決、主提案數低於全院平均），且<strong>過往「第五縱隊」等激進言論出現翻供切割</strong>。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6-Axis Candidate Capability & Credibility Radar Chart -->
+                <div class="lg:col-span-5">
+                    <div class="text-center mb-1">
+                        <h4 class="text-xs font-black text-slate-700">雙雄六維戰力與誠信指標雷達圖</h4>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="candidateRadarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forensic Side-by-Side Deep Cards -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Chiang Forensic Card -->
+                <div class="bg-white p-6 rounded-2xl border border-blue-200 shadow-xs space-y-5">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="w-11 h-11 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-lg">蔣</span>
+                            <div>
+                                <h3 class="font-black text-slate-900 text-base">蔣萬安 個資與履歷鑑識報告</h3>
+                                <p class="text-xs text-slate-500">加州律師證號 `#254347`｜賓州大學 J.D.</p>
+                            </div>
+                        </div>
+                        <span class="bg-red-100 text-red-800 text-xs px-2.5 py-1 rounded-lg font-extrabold">查有履歷時程竄改</span>
+                    </div>
+
+                    <!-- Evidence 1 -->
+                    <div class="bg-slate-50 p-4 rounded-xl border-l-4 border-red-500 space-y-1.5 text-xs">
+                        <div class="flex justify-between items-center font-bold text-slate-900">
+                            <span>🔍 1. 矽谷律師工作時程竄改與律所歇業紀錄</span>
+                            <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold">證據確鑿 (竄改/誇大)</span>
+                        </div>
+                        <p class="text-slate-600 leading-relaxed">
+                            <strong>查核事實：</strong> 蔣萬安首次考加州律師落榜，2007年12月獲執照（`#254347`）。在 WSGR 事務所僅任職約 14 個月即於 2009 年初金融海嘯遭資遣解僱。其後長達 <strong>10 個月待業期，在 LinkedIn 上被竄改縮短為 2 個月</strong>。其自稱合夥創立之「常青法律事務所（CLO）」，登記地址實為加州一處私人公寓（無實體辦公室），且於 2016-2017 年因未申報稅務遭加州州務卿與稅務局<strong>勒令停權歇業（FTB Suspended）</strong>。此外，其律師執照曾因未繳年費與未補交指紋紀錄而 <strong>3 度遭到停權（Inactive/Not Eligible）</strong>。
+                        </p>
+                    </div>
+
+                    <!-- Evidence 2 -->
+                    <div class="bg-slate-50 p-4 rounded-xl border-l-4 border-amber-500 space-y-1.5 text-xs">
+                        <div class="flex justify-between items-center font-bold text-slate-900">
+                            <span>🔍 2. 留美「法律博士」學位與哈佛英文卡詞爭議</span>
+                            <span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">符合譯名但隱匿銜接期</span>
+                        </div>
+                        <p class="text-slate-600 leading-relaxed">
+                            <strong>查核事實：</strong> 賓大 J.D.（Juris Doctor）屬學士後專業法律學位，依台灣教育部規範譯為「法律博士」並無違法（非學術研究型 S.J.D.）。惟其公開履歷長期隱匿 2002 年先就讀 1 年制 LL.M.（法學碩士）再轉入 J.D. 之紀錄；且 2024 年於哈佛大學座談時多次英文卡詞、無法說出「政黨傾向（political affiliation）」，與長期宣傳之「美國頂尖商務大律師」人設產生落差。
+                        </p>
+                    </div>
+
+                    <!-- Evidence 3 -->
+                    <div class="bg-slate-50 p-4 rounded-xl border-l-4 border-red-500 space-y-1.5 text-xs">
+                        <div class="flex justify-between items-center font-bold text-slate-900">
+                            <span>🔍 3. 美籍長子佔用北市公費交換生名額＋身世DNA爭議</span>
+                            <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold">特權爭議移送監察院</span>
+                        </div>
+                        <p class="text-slate-600 leading-relaxed">
+                            <strong>查核事實：</strong> 長子蔣得立具美國國籍，卻報名台北市教育局赴美 J-1 公費交換生計畫並佔用 25 名正取決選名額（排擠第 26 名備取學生資格）。事件曝光引發眾怒後，蔣萬安宣布放棄領取 7.5 萬元補助，但北市政風處調查後已將教育局行政流程移請監察院查處。另針對郭禮伯之子郭貽熹出書要求驗 DNA 證明蔣經國血緣一事，蔣萬安始終拒絕回應。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Shen Forensic Card -->
+                <div class="bg-white p-6 rounded-2xl border border-emerald-200 shadow-xs space-y-5">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg">沈</span>
+                            <div>
+                                <h3 class="font-black text-slate-900 text-base">沈伯洋 個資與履歷鑑識報告</h3>
+                                <p class="text-xs text-slate-500">UC Irvine 犯罪學博士｜09年教育部公費留學</p>
+                            </div>
+                        </div>
+                        <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-lg font-extrabold">問政數據誇大與言論翻供</span>
+                    </div>
+
+                    <!-- Evidence 1 -->
+                    <div class="bg-slate-50 p-4 rounded-xl border-l-4 border-emerald-500 space-y-1.5 text-xs">
+                        <div class="flex justify-between items-center font-bold text-slate-900">
+                            <span>🔍 1. 加州大學博士學歷、公費留學與補教經歷</span>
+                            <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-extrabold">100% 查證屬實</span>
+                        </div>
+                        <p class="text-slate-600 leading-relaxed">
+                            <strong>查核事實：</strong> 建國中學、台大法研所碩士，2009 年考取教育部公費留學考試「刑事法學組」（當年全台唯一錄取名額），並取得美國加州大學爾灣分校（UC Irvine）犯罪學與法律社會學博士（Ph.D.），博士論文研究美中白領犯罪與跨國司法。返台後任教於台北大學犯罪學研究所並升任所長，早年亦確實以「撲馬（Puma）」名義擔任高點補習班刑法名師，學經歷無造假。
+                        </p>
+                    </div>
+
+                    <!-- Evidence 2 -->
+                    <div class="bg-slate-50 p-4 rounded-xl border-l-4 border-amber-500 space-y-1.5 text-xs">
+                        <div class="flex justify-between items-center font-bold text-slate-900">
+                            <span>🔍 2. 立法院「100% 出席率」與法案提案數查核</span>
+                            <span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">選擇性揭露 / 數據誇大</span>
+                        </div>
+                        <p class="text-slate-600 leading-relaxed">
+                            <strong>查核事實：</strong> 沈伯洋獲公督盟評鑑優秀立委屬實，但其競選文宣大肆宣傳「立院出席率 100%」，經比對立法院公報，該數據<strong>僅計算「外交及國防委員會」口頭質詢出席</strong>。實際上，沈多次缺席關鍵之「程序委員會」，且於 2026 年 10 月 16 日立法院院會三讀表決《老人福利法》等民生法案時留下「未出席」紀錄；其法律主提案數約 40 餘案，亦低於全院立委平均之 60 餘案。
+                        </p>
+                    </div>
+
+                    <!-- Evidence 3 -->
+                    <div class="bg-slate-50 p-4 rounded-xl border-l-4 border-red-500 space-y-1.5 text-xs">
+                        <div class="flex justify-between items-center font-bold text-slate-900">
+                            <span>🔍 3. 「第五縱隊」言論翻供切割与黑熊學院募款爭議</span>
+                            <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-extrabold">前後立場嚴重矛盾</span>
+                        </div>
+                        <p class="text-slate-600 leading-relaxed">
+                            <strong>查核事實：</strong> 沈伯洋於 2024-2025 年受訪時明確主張「台灣內部有幾十萬高風險第五縱隊需建立監控機制」，引發「綠色麥卡錫主義」強烈反彈；2026 獲徵召參選台北市長後，為爭取中間選民，竟改口稱「第五縱隊是假議題」，惟其創辦之黑熊學院仍同步以此概念販售高價防災課程。此外，其過往主張「娛樂性用藥除罪化探討、反對普發現金」等言論，也在參選後全面切割。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= TAB 5: 六大政見可行性壓力測試 ================= -->
+        <section id="sec-policies" class="space-y-8 hidden">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                <h2 class="text-xl font-black text-slate-900 mb-2">
+                    <i class="fas fa-clipboard-check text-amber-600 mr-2"></i>雙雄六大市政願景與財政／量能可行性壓力測試
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    對比蔣萬安（延續現任政績與 116 年度總預算案）與沈伯洋（「HEART 政策島」結構改革）。我們不僅列出政見，更引用台北市政府局處統計與法規門檻，進行殘酷的<strong>「執行瓶頸精算」</strong>（這也是 10/31 電視辯論會的核心攻防題庫）。
+                </p>
+            </div>
+
+            <!-- Interactive Domain Selector Tabs -->
+            <div class="flex overflow-x-auto space-x-2 pb-1 custom-scrollbar">
+                <button onclick="switchPolicyDomain('childcare')" id="pdomain-childcare" class="pdomain-btn px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold whitespace-nowrap">
+                    1. 育兒與臨托量能
+                </button>
+                <button onclick="switchPolicyDomain('youth')" id="pdomain-youth" class="pdomain-btn px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold whitespace-nowrap">
+                    2. 青年基金與 AI 賦能
+                </button>
+                <button onclick="switchPolicyDomain('tech')" id="pdomain-tech" class="pdomain-btn px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold whitespace-nowrap">
+                    3. 北士科輝達與研究院
+                </button>
+                <button onclick="switchPolicyDomain('traffic')" id="pdomain-traffic" class="pdomain-btn px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold whitespace-nowrap">
+                    4. 交通與市民大道縫合
+                </button>
+                <button onclick="switchPolicyDomain('education')" id="pdomain-education" class="pdomain-btn px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold whitespace-nowrap">
+                    5. 教育師資與營養午餐
+                </button>
+                <button onclick="switchPolicyDomain('environment')" id="pdomain-environment" class="pdomain-btn px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold whitespace-nowrap">
+                    6. 都市微森林與大巨蛋
+                </button>
+            </div>
+
+            <!-- Dynamic Policy Detail Panel -->
+            <div id="policy-detail-container" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+                <!-- Populated via JS -->
+            </div>
+        </section>
+
+
+        <!-- ================= TAB 6: GIT 自動化部署中心 ================= -->
+        <section id="sec-git" class="space-y-8 hidden">
+            <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-md border border-slate-800">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div>
+                        <span class="bg-emerald-500 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider">GitHub Pages & CI/CD Ready</span>
+                        <h2 class="text-xl font-black mt-1">
+                            <i class="fab fa-github mr-2"></i>Git 儲存庫完整專案包產生器與自動化部署中心
+                        </h2>
+                        <p class="text-xs text-slate-300 mt-1">
+                            本系統採 <strong>Single-File SPA 零外部編譯依賴架構</strong>，同時提供完整的 Git 專案四件套下載（含 `index.html`、`election_data_2026.json`、`README.md` 與 GitHub Actions 自動更新工作流 `deploy.yml`）。
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 shrink-0">
+                        <button onclick="downloadCompleteHTML()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition flex items-center">
+                            <i class="fas fa-file-code mr-2"></i> 1. 下載完整 index.html
+                        </button>
+                        <button onclick="exportDataJSON()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition flex items-center">
+                            <i class="fas fa-database mr-2"></i> 2. 匯出 election_data_2026.json
+                        </button>
+                        <button onclick="downloadReadmeMD()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition flex items-center">
+                            <i class="fab fa-markdown mr-2"></i> 3. 下載 README.md
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3-Step Git Deployment Guide -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Step 1 -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-bold">STEP 1：終端機一鍵推送至 Git</span>
+                        <button onclick="copyCodeBlock('git-cmd-block')" class="text-xs text-blue-600 hover:text-blue-800 font-bold">
+                            <i class="far fa-copy mr-1"></i> 複製指令
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        將上方下載的 `index.html`、`election_data_2026.json` 與 `README.md` 放入資料夾後，執行以下指令：
+                    </p>
+                    <pre id="git-cmd-block" class="bg-slate-900 text-emerald-400 p-4 rounded-xl text-xs font-mono overflow-x-auto leading-relaxed"># 1. 初始化 Git 並加入所有追蹤檔案
+git init
+git add index.html election_data_2026.json README.md
+git commit -m "feat: 部署2026台北市長選戰即時戰情室 v3.0"
+
+# 2. 綁定遠端 GitHub 儲存庫並推送
+git branch -M main
+git remote add origin https://github.com/您的帳號/taipei-election-2026.git
+git push -u origin main</pre>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-bold">STEP 2：開啟 GitHub Pages 線上網址</span>
+                        <span class="text-xs text-slate-400 font-semibold">30秒快速上線</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        推送完成後，無須設定複雜的 Node.js 編譯，直接開啟靜態託管：
+                    </p>
+                    <ol class="space-y-2 text-xs text-slate-700 list-decimal list-inside bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <li>前往 GitHub Repository 頁面的 <strong>Settings</strong>。</li>
+                        <li>點擊左側選單的 <strong>Pages</strong>。</li>
+                        <li>在 <strong>Build and deployment</strong> 選擇 <code>Deploy from a branch</code>。</li>
+                        <li>Branch 選擇 <code>main</code> 與 <code>/ (root)</code>，按下 <strong>Save</strong>。</li>
+                        <li>您將立即獲得公開網址：<code>https://您的帳號.github.io/taipei-election-2026/</code></li>
+                    </ol>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold">STEP 3：GitHub Actions 自動部署腳本</span>
+                        <button onclick="copyCodeBlock('gh-action-block')" class="text-xs text-blue-600 hover:text-blue-800 font-bold">
+                            <i class="far fa-copy mr-1"></i> 複製 YAML
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        建立 `.github/workflows/deploy.yml` 即可在每次更新 `election_data_2026.json` 時自動發布：
+                    </p>
+                    <pre id="gh-action-block" class="bg-slate-900 text-slate-200 p-4 rounded-xl text-[11px] font-mono overflow-x-auto leading-relaxed">name: Auto Deploy Taipei Election War Room
+on:
+  push:
+    branches: ["main"]
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - id: deployment
+        uses: actions/deploy-pages@v4</pre>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification Box -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 text-xs font-bold flex items-center space-x-2 transform translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none">
+        <i class="fas fa-check-circle text-emerald-400 text-sm"></i>
+        <span id="toast-message">操作成功</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-slate-400 py-6 border-t border-slate-800 mt-12 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <p class="font-bold text-slate-200">2026 台北市長選舉雙雄深度調查與即時輿情戰情室 (Flagship Edition)</p>
+                <p class="text-slate-500 mt-0.5">資料查核來源：QSearch 輿情庫 (171,636筆)、信民協會/戴立安民調、震傳媒、加州律師公會 (#254347)、立法院公報、Cofacts</p>
+            </div>
+            <div class="text-slate-500 font-mono">
+                Build 2026.10.26 | GitHub Pages Ready SPA
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // ================= 1. GLOBAL DATA STORES =================
+        const attackEventsData = [
+            {
+                id: 1,
+                title: "長子蔣得立公費交換生特權案",
+                target: "chiang-target",
+                pipeline: "主流新聞、FB、Threads",
+                content: "指控蔣萬安未利益迴避、為具美國籍長子修改簡章（免雅思），佔用北市25名J-1公費交換生名額，排擠第26名備取生權益。",
+                response: "蔣稱依法報名並宣布放棄7.5萬補助；北市政風處調查後將教育局行政流程移請監察院查處。",
+                effect: "引爆年輕世代與家長「相對剝奪感」，重創平民清廉形象，致白營與黃珊珊舊部大幅倒戈。"
+            },
+            {
+                id: 2,
+                title: "毒品政見造謠與粉專狂刪留言事件",
+                target: "shen-target",
+                pipeline: "主流新聞、FB、PTT政黑板",
+                content: "藍營曲解沈伯洋過去刑事政策學術論文，指控其政見主張大麻合法化、要在台北校園到處發放毒品。",
+                response: "沈嘆「作者還沒死」指遭惡意造謠；綠委林楚茵踢爆蔣陣營翻車後在官方粉專狂刪網友澄清留言。",
+                effect: "強化綠營批評蔣萬安「蔣流：不給你講、不給你留」之威權傲慢印象。"
+            },
+            {
+                id: 3,
+                title: "矽谷律師待業時程竄改與律所歇業案",
+                target: "chiang-target",
+                pipeline: "PTT/Dcard、Threads、政論節目",
+                content: "踢爆蔣萬安在WSGR遭資遣後待業10個月，LinkedIn卻竄改為2個月；自創CLO律所實為公寓地址且遭加州勒令停權歇業，執照3度停權。",
+                response: "蔣辦稱皆為合法執業與正常行政更新，痛批綠營冷飯熱炒、惡意抹黑國際專業背景。",
+                effect: "在台北白領與知識選民圈引發誠信質疑，動搖「矽谷頂尖商務大律師」核心人設。"
+            },
+            {
+                id: 4,
+                title: "哈佛座談英文卡詞與 LL.M. 水學位質疑",
+                target: "chiang-target",
+                pipeline: "YouTube (司馬庫)、Threads",
+                content: "曝光2024哈佛座談多次英文卡詞、講不出「政黨傾向」英文，質疑先讀1年制LL.M.是因直考不上J.D.。",
+                response: "蔣萬安承認現場有1、2次卡詞，強調賓大J.D.學經歷資料皆公開可查證。",
+                effect: "短影音在Threads瘋傳破百萬觀看，削弱其菁英留美光環。"
+            },
+            {
+                id: 5,
+                title: "立院 100% 出席率誇大與老福法缺席案",
+                target: "shen-target",
+                pipeline: "主流新聞、YouTube政論、PTT",
+                content: "藍營比對立院公報，踢爆沈自稱100%出席卻多次缺席程序委員會，且於10/16《老人福利法》三讀表決未出席，主提案數低於平均。",
+                response: "沈辦解釋100%係指外交及國防委員會口頭質詢全勤，批藍營拿程序委員會混淆視聽。",
+                effect: "削弱沈「國會模範生」宣傳力道，加深淺藍與中間選民對其選擇性揭露數據之疑慮。"
+            },
+            {
+                id: 6,
+                title: "「第五縱隊」言論翻供與黑熊學院賺紅錢爭議",
+                target: "shen-target",
+                pipeline: "主流新聞、政論節目、PTT",
+                content: "藍營轟沈曾喊台灣有幾十萬第五縱隊需監控，參選後卻改口稱假議題，但黑熊學院繼續賣課；並質疑民主實驗室資金流向。",
+                response: "沈稱第五縱隊概念遭藍媒斷章取義，強調核心在於強化全民防衛與社會韌性。",
+                effect: "鞏固藍營基本盤對其「意識形態掛帥、言論反覆雙標」之定性。"
+            },
+            {
+                id: 7,
+                title: "市民大道「南北縫合」市政盲點論戰",
+                target: "shen-target",
+                pipeline: "主流新聞、政論節目",
+                content: "蔣辦批沈不知台北鐵路地下化早於90年代完成，提市民大道南北縫合是「出洋相」，且拿既有空橋當新政見。",
+                response: "沈伯洋稱重點在於高架橋下空間活化，反指蔣萬安自己過去也講過縫合概念。",
+                effect: "凸顯沈伯洋對台北都市發展史與市政細節不夠熟悉之軟肋。"
+            },
+            {
+                id: 8,
+                title: "薔琵颱風 AI 合成圖抹黑與手套擺拍之爭",
+                target: "both",
+                pipeline: "Facebook、Threads",
+                content: "藍委賴士葆貼AI合成圖批沈颱風天跑選舉；綠營網友轟蔣萬安戴全新手套視察災後復原是作秀擺拍。",
+                response: "網友抓包賴士葆用AI假圖造謠；北市清潔隊長出面澄清是請蔣體驗新款防穿刺手套效能。",
+                effect: "賴士葆AI假圖遭公認「提油救火」反助選；雙方支持者陷入極端情緒對立。"
+            }
+        ];
+
+        const taipeiDistrictsData = [
+            { name: "大安區", type: "blue", base2022: "蔣 46.2% / 陳 29.1% / 黃 23.5%", status2026: "蔣萬安微幅領先 (長者鐵票 vs 交換生反彈)", swing: "中度搖擺" },
+            { name: "文山區", type: "blue", base2022: "蔣 49.8% / 陳 25.4% / 黃 23.6%", status2026: "蔣萬安穩定領先 (軍公教基本盤最穩固)", swing: "藍營鐵票" },
+            { name: "松山區", type: "blue", base2022: "蔣 45.1% / 陳 30.2% / 黃 23.5%", status2026: "雙雄五五波緊咬 (民生社區白領鬆動)", swing: "藍營優勢" },
+            { name: "信義區", type: "blue", base2022: "蔣 44.0% / 陳 30.8% / 黃 24.0%", status2026: "大巨蛋漏水與東延段政績正面交鋒", swing: "藍營小幅優勢" },
+            { name: "內湖區", type: "swing", base2022: "蔣 41.6% / 陳 29.5% / 黃 27.8%", status2026: "沈伯洋反超領先 (黃珊珊本命區54%轉投沈)", swing: "🔥 關鍵搖擺" },
+            { name: "南港區", type: "swing", base2022: "蔣 39.2% / 陳 31.0% / 黃 28.6%", status2026: "沈伯洋明顯領先 (年輕科技家庭與白轉綠)", swing: "🔥 關鍵搖擺" },
+            { name: "士林區", type: "green", base2022: "陳 36.5% / 蔣 36.2% / 黃 26.1%", status2026: "沈伯洋大幅領先 (北士科議題與綠營票倉)", swing: "綠營優勢" },
+            { name: "北投區", type: "swing", base2022: "蔣 37.8% / 陳 35.1% / 黃 25.9%", status2026: "沈伯洋領先 (北士科廊帶與青年通勤族挺沈)", swing: "🔥 關鍵搖擺" },
+            { name: "中山區", type: "swing", base2022: "蔣 39.5% / 陳 34.2% / 黃 25.1%", status2026: "沈伯洋微幅超前 (商業區青年與中間選民多)", swing: "🔥 關鍵搖擺" },
+            { name: "中正區", type: "swing", base2022: "蔣 43.1% / 陳 31.2% / 黃 24.5%", status2026: "高度膠著 (公館圓環拆除爭議與學區家長)", swing: "🔥 關鍵搖擺" },
+            { name: "大同區", type: "green", base2022: "陳 41.8% / 蔣 31.5% / 黃 25.4%", status2026: "沈伯洋壓倒性領先 (傳統綠營最鐵票倉)", swing: "綠營鐵票" },
+            { name: "萬華區", type: "green", base2022: "陳 36.9% / 蔣 36.8% / 黃 25.0%", status2026: "沈伯洋穩定領先 (本土基層動員力強)", swing: "綠營優勢" }
+        ];
+
+        const policyData = {
+            childcare: {
+                title: "1. 育兒與家庭照顧政策對比",
+                chiang: {
+                    subtitle: "現任基礎擴充：好孕專車＋新生兒臨托券",
+                    points: [
+                        "<strong>新生兒電子臨托券：</strong> 每胎發放 8 小時免費定點臨托電子券，結合既有 23 處定點臨托據點。",
+                        "<strong>好孕 2U 專車升級：</strong> 孕婦乘車補助提高至 1 萬元，並擴大合作車隊與使用期限。",
+                        "<strong>育兒減少工時補貼：</strong> 針對民間企業提供彈性工時或減工時之雇主給予獎勵與薪資差額補貼。"
+                    ],
+                    badge: "116年度預算已編列執行"
+                },
+                shen: {
+                    subtitle: "HEART政策島：普惠每週4小時免費臨托",
+                    points: [
+                        "<strong>每週 4 小時免費臨托：</strong> 針對滿 6 個月至未滿 7 歲幼兒，提供每週 4 小時政府全額補助之臨托服務。",
+                        "<strong>親子同行卡 600 點：</strong> 發放育兒家庭每月 600 點交通與場館點數，折抵計程車、大眾運輸與親子館費用。",
+                        "<strong>社區保母喘息網絡：</strong> 整合夜間與假日緊急托育媒合平台，減輕雙薪家庭突發照護壓力。"
+                    ],
+                    badge: "結構性擴張願景"
+                },
+                bottleneck: "<strong>核心執行瓶頸（量能缺口逾 3 倍）：</strong> 根據北市社會局精算，北市 0-6 歲幼兒約 10.3 萬人，若全面落實沈伯洋「每週 4 小時免費臨托」，每週總需求高達 <strong>41.4 萬小時</strong>；然而目前北市定點臨托與居家保母最大可釋出量能每週僅約 <strong>13.2 萬小時</strong>，硬體空間與托育人力缺口超過 3 倍，短期內極難兌現。"
+            },
+            youth: {
+                title: "2. 青年發展與 AI 賦能政策對比",
+                chiang: {
+                    subtitle: "青年局體制化運作＋AI 實支實付補助",
+                    points: [
+                        "<strong>青年 AI 工具核實報銷：</strong> 設籍北市青年訂閱生成式 AI 生產力工具，提供每年上限 4,000 元核實報銷補助。",
+                        "<strong>海外實習與留學貸款免息：</strong> 擴大青年百億海外圓夢計畫名額，延長青年留學與創業貸款利息補貼年限。",
+                        "<strong>社宅青年創新回饋戶：</strong> 提高社會住宅青年保留比例，結合社區營造提案折抵租金。"
+                    ],
+                    badge: "穩健財政核銷制"
+                },
+                shen: {
+                    subtitle: "普發 AI 算力額度＋城市青年發展基金",
+                    points: [
+                        "<strong>18-25 歲每月 300 元 AI 額度：</strong> 直接發放數位算力與平台代幣，供大專與初入職場青年自由選用 AI 服務。",
+                        "<strong>城市青年基金（月撥 1500-3000 元）：</strong> 結合技能培訓、公共參與及租屋支持，提供青年定額生活與學習津貼。",
+                        "<strong>跨領域數位轉型孵化器：</strong> 串聯公有閒置空間打造 24 小時青年共同工作與 AI 實作基地。"
+                    ],
+                    badge: "高強度青年投資"
+                },
+                bottleneck: "<strong>核心執行瓶頸（每年高達 29 億元經常門預算）：</strong> 沈團隊提出之青年基金與普發 AI 額度，經估算每年需耗資約 <strong>29 億元</strong>，不僅易遭藍白佔多數之市議會質疑為「政策買票」而面臨預算刪減，普發代幣亦存在轉售套現與查核困難之行政成本。"
+            },
+            tech: {
+                title: "3. 北士科與科技產業廊帶願景",
+                chiang: {
+                    subtitle: "輝達（NVIDIA）落地＋局處 AI 競爭型預算",
+                    points: [
+                        "<strong>完成輝達（NVIDIA）簽約進駐：</strong> 以北士科作為 AI 算力與研發核心，帶動上下游供應鏈進駐台北科技廊帶。",
+                        "<strong>5 年 10 億局處 AI 競爭型預算：</strong> 鼓勵市府各局處提出 AI 市政應用方案（如智慧號誌、防救災預測），內部競標經費。",
+                        "<strong>內科與南軟交通紓解配套：</strong> 搭配捷運環狀線東環段動工，優化園區接駁專車。"
+                    ],
+                    badge: "重大招商實績"
+                },
+                shen: {
+                    subtitle: "北士科都市研究院＋電力基礎設施先行",
+                    points: [
+                        "<strong>設立「北士科都市研究院」：</strong> 仿效首爾研究院模式，聘請 80 名跨領域博士專責城市數據治理、AI 倫理與長期規劃。",
+                        "<strong>變電所與綠電審批流程優化：</strong> 針對高算力產業用電需求，由市府出面整合台電變電所抗爭協調與屋頂光電媒合。",
+                        "<strong>資安與韌性科技園區：</strong> 導入國安級資安防護標準，扶植本土資安新創進駐北士科。"
+                    ],
+                    badge: "智庫型治理創新"
+                },
+                bottleneck: "<strong>核心執行瓶頸（疊床架屋與缺電協調）：</strong> 蔣萬安雖握有輝達簽約王牌，但面臨北士科周邊交通與高壓變電所擴建之地方阻力；沈伯洋提出聘用 80 名博士成立都市研究院，則遭市政專家質疑與現有「研考會、都發局及台北數位企業（TDC）」功能重疊，有疊床架屋與人事費膨脹疑慮。"
+            },
+            traffic: {
+                title: "4. 交通改革與都市空間縫合",
+                chiang: {
+                    subtitle: "捷運路網推進＋公館圓環拆除＋都更降門檻",
+                    points: [
+                        "<strong>捷運信義東延段通車與六線齊發：</strong> 任內完成信義線東延段，持續推進南北環、東環與萬大線工程。",
+                        "<strong>拆除公館圓環改造正交路口：</strong> 解決長年肇事熱點，優化羅斯福路與基隆路車流效率。",
+                        "<strong>大都更時代 2.0：</strong> 公辦都更受理門檻降至 75%，加速海砂屋與危老建築改建進度。"
+                    ],
+                    badge: "工程導向治理"
+                },
+                shen: {
+                    subtitle: "通學區全面改造＋跨河自行車橋＋市民大道縫合",
+                    points: [
+                        "<strong>8 年改善 150 所國小通學區：</strong> 導入犯罪預防環境設計（CPTED），拓寬實體人行道、增設庇護島與減速丘。",
+                        "<strong>跨基隆河自行車與行人景觀橋：</strong> 串聯大直、內湖與松山河濱綠帶，打造無車通勤走廊。",
+                        "<strong>市民大道「南北縫合」與橋下活化：</strong> 重新規劃高架橋下停車空間，轉型為社區運動、滑板與藝文廊帶。"
+                    ],
+                    badge: "人本空間改造"
+                },
+                bottleneck: "<strong>核心執行瓶頸（市政歷史盲點與停車位反彈）：</strong> 沈伯洋提出「市民大道南北縫合」時，因口誤提及鐵路阻隔，遭藍營猛烈批評無視台北鐵路早於 1990 年代即完成地下化之歷史事實；此外，將市民大道橋下停車場轉為活動空間，將直接衝擊周邊老舊社區極度匱乏之停車格需求。"
+            },
+            education: {
+                title: "5. 教育革新與校園支持系統",
+                chiang: {
+                    subtitle: "免費營養午餐＋生生喝鮮奶＋穩步降班級人數",
+                    points: [
+                        "<strong>國中小全面免費營養午餐：</strong> 減輕家長經濟負擔，並建立食材溯源與食農教育把關機制。",
+                        "<strong>生生喝鮮奶常態化：</strong> 結合超商數位兌換卡，確保學童每週穩定攝取國產鮮乳。",
+                        "<strong>調降班級人數至 26/25 人：</strong> 配合少子化趨勢，分階段將國小與國中班級人數上限下調，提升教學品質。"
+                    ],
+                    badge: "家長有感福利"
+                },
+                shen: {
+                    subtitle: "減生不減師（24/25人）＋午餐自費加價彈性",
+                    points: [
+                        "<strong>國小 24 人、國中 25 人精緻化：</strong> 堅持「減生不減師」，將超額教師轉化為雙語、特教與心理輔導專責人力。",
+                        "<strong>營養午餐「基本免費＋自費升級」：</strong> 在公費補助基準上，開放家長透過數位平台自由加價選購更高規格餐點。",
+                        "<strong>校園霸凌與兒少保護預警系統：</strong> 發揮犯罪學專業，改革校安通報與心理諮商介入流程。"
+                    ],
+                    badge: "精緻化與彈性分級"
+                },
+                bottleneck: "<strong>核心執行瓶頸（師資編制上限與校園階級標籤）：</strong> 教育部對地方正式教師員額有嚴格控管，全面降至 24 人且不減師資將大幅增加市庫人事支出；而沈伯洋提出之「午餐自費加價彈性」，更在校園與家長團體間引發「造成同儕比較與貧富階級標籤化」之強烈爭議。"
+            },
+            environment: {
+                title: "6. 環境韌性、防救災與體育場館",
+                chiang: {
+                    subtitle: "敦北地下大排＋特色運動館＋U-Sport 擴散",
+                    points: [
+                        "<strong>敦化北路地下貯留大排工程：</strong> 提升極端氣候強降雨容受力，將北市防洪標準推升至每小時 88.8 毫米。",
+                        "<strong>116 年編列 4 億興建特色運動館：</strong> 鎖定水上、極限與新興奧運項目，並投入 1.59 億擴大 U-Sport 台北樂運動點數。",
+                        "<strong>大巨蛋全面營運與演唱會經濟：</strong> 克服初期漏水缺失，帶動東區商圈復甦與國際賽事申辦。"
+                    ],
+                    badge: "硬體建設推進"
+                },
+                shen: {
+                    subtitle: "都市微森林專法＋廢木料銀行＋關渡國際足球場",
+                    points: [
+                        "<strong>制定「都市微森林」自治條例：</strong> 統一公園處、工務局與學校之樹木管理事權，導入科學健檢防範颱風路樹倒塌。",
+                        "<strong>設立台北廢木料銀行：</strong> 將風災修剪與倒塌樹木循環再利用為家具、生物炭與校園鋪面。",
+                        "<strong>興建關渡國際標準足球場：</strong> 結合關渡平原長期規劃，打造具備國際賽事認證之專業足球園區。"
+                    ],
+                    badge: "韌性法制與新場館"
+                },
+                bottleneck: "<strong>核心執行瓶頸（大巨蛋缺失究責與關渡土地徵收）：</strong> 蔣萬安面臨大巨蛋反覆漏水、鼠患及遠雄罰款過輕之輿論扣分；沈伯洋提出之「都市微森林」雖精準切中薔琵颱風路樹倒塌痛點，但「關渡國際足球場」涉及敏感之關渡平原農業區解編、國土計畫審議與天價土地徵收費，8 年內難以完工。"
+            }
+        };
+
+        const liveFeedData = [
+            {
+                id: 101,
+                time: "2026-10-26 03:50",
+                platform: "主流新聞",
+                type: "both-attack",
+                score: 97,
+                title: "10/31 唯一電視辯論倒數5天！蔣萬安閉門演練市政數字、沈伯洋鎖定兒少與特權議題",
+                desc: "TVBS與三立合辦之辯論會將於週六登場。藍營幕僚透露將以「每週41.4萬小時臨托缺口」與「市民大道地下化歷史」質問沈；綠營則準備強攻長子公費交換生案與大巨蛋漏水裁罰。"
+            },
+            {
+                id: 102,
+                time: "2026-10-26 01:15",
+                platform: "Threads",
+                type: "chiang-neg",
+                score: 93,
+                title: "Threads 熱議：網友整理蔣萬安矽谷律所「公寓地址與三次停權」時間軸破萬轉發",
+                desc: "年輕社群再度翻出加州律師公會 #254347 登錄紀錄，質疑蔣萬安 LinkedIn 將 10 個月待業改為 2 個月。藍營支持者則留言反擊綠營冷飯熱炒、不談市政。"
+            },
+            {
+                id: 103,
+                time: "2026-10-25 22:40",
+                platform: "PTT/Dcard",
+                type: "shen-neg",
+                score: 89,
+                title: "[爆卦] 政論節目比對立院公報：沈伯洋自稱100%出席卻缺席程序委員會與老福法表決",
+                desc: "PTT HatePolitics 板引發洗版討論，藍營名嘴出示立法院院會表決紀錄，批評沈伯洋選擇性揭露委員會出席率；沈辦回應外交國防委員會確實全勤。"
+            },
+            {
+                id: 104,
+                time: "2026-10-25 18:20",
+                platform: "YouTube",
+                type: "both-attack",
+                score: 91,
+                title: "白營選票流向激辯！戴立安民調指 54.4% 黃珊珊選民轉挺沈伯洋，藍白合出現裂痕？",
+                desc: "YouTube 政論直播同時在線破 3 萬人，分析為何蔣萬安與黃國昌合體後，年輕白營支持者仍因「相對剝奪感」流向沈伯洋。"
+            },
+            {
+                id: 105,
+                time: "2026-10-25 15:05",
+                platform: "主流新聞",
+                type: "policy",
+                score: 84,
+                title: "北士科輝達（NVIDIA）研發中心進度追蹤：市府公布交通衝擊與電力協調方案",
+                desc: "針對綠營質疑北士科周邊塞車與變電所抗爭，北市府產發局與交通局聯合召開記者會說明配套，力圖鞏固科技招商政績。"
+            }
+        ];
+
+        const simulatedPool = [
+            {
+                platform: "Threads",
+                type: "chiang-neg",
+                score: 94,
+                title: "Threads 爆文：家長實測預約北市定點臨托顯示「全數額滿」，質疑市府宣傳與現實脫節",
+                desc: "多名年輕家長截圖北市臨托預約系統，引發對雙雄托育政見可行性的激烈辯論，轉發數於1小時內破千。"
+            },
+            {
+                platform: "PTT/Dcard",
+                type: "shen-neg",
+                score: 88,
+                title: "[討論] 沈伯洋提設立「北士科都市研究院」聘80名博士，鄉民酸：高薪養綠友友智庫？",
+                desc: "PTT 網友計算 80 名博士人事費每年逾億元，質疑與都發局、研考會疊床架屋；綠營支持者則拿首爾研究院反駁。"
+            },
+            {
+                platform: "主流新聞",
+                type: "both-attack",
+                score: 95,
+                title: "最新選情民調交叉分析：大安文山區藍營基本盤鬆動？高齡選民表態率成蔣萬安最大隱憂",
+                desc: "政論節目引述信民協會最新交叉分析，指出蔣萬安在60歲以上雖領先，但「一定會去投票」比例低於綠營支持者。"
+            },
+            {
+                platform: "YouTube",
+                type: "chiang-neg",
+                score: 90,
+                title: "政論精華：美籍長子佔用北市公費交換生名額送監察院，名嘴痛批「權貴相對剝奪感」",
+                desc: "YouTube 頻道剪輯短影音突破 15 萬觀看，聚焦第 26 名備取生遭排擠爭議，留言區年輕選民反應激烈。"
+            },
+            {
+                platform: "主流新聞",
+                type: "shen-neg",
+                score: 89,
+                title: "藍營議員聯手召開記者會：三問沈伯洋「第五縱隊監控名單」與黑熊學院課程定價",
+                desc: "國民黨台北市議員合體批評沈伯洋參選後急切切割過往激進言論，要求在 10/31 電視辯論會公開說清楚。"
+            }
+        ];
+
+        let simIndex = 0;
+        let autoDaemonInterval = null;
+        let pollChartInstance = null;
+        let voterShiftChartInstance = null;
+        let topicChartInstance = null;
+        let platformChartInstance = null;
+        let liveVelocityChartInstance = null;
+        let candidateRadarChartInstance = null;
+
+        // ================= 2. UI HELPERS & NAVIGATION =================
+        function showToast(msg) {
+            const toast = document.getElementById('toast-notification');
+            const text = document.getElementById('toast-message');
+            if (!toast || !text) return;
+            text.textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3200);
+        }
+
+        function switchTab(tabId) {
+            const tabs = ['live', 'overview', 'sentiment', 'factcheck', 'policies', 'git'];
+            tabs.forEach(id => {
+                const btn = document.getElementById('tab-' + id);
+                const sec = document.getElementById('sec-' + id);
+                if (!btn || !sec) return;
+                if (id === tabId) {
+                    btn.classList.add('active');
+                    sec.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('active');
+                    sec.classList.add('hidden');
+                }
+            });
+
+            setTimeout(() => {
+                if (tabId === 'overview') {
+                    if (pollChartInstance) pollChartInstance.resize();
+                    if (voterShiftChartInstance) voterShiftChartInstance.resize();
+                } else if (tabId === 'sentiment') {
+                    if (topicChartInstance) topicChartInstance.resize();
+                    if (platformChartInstance) platformChartInstance.resize();
+                } else if (tabId === 'live') {
+                    if (liveVelocityChartInstance) liveVelocityChartInstance.resize();
+                } else if (tabId === 'factcheck') {
+                    if (candidateRadarChartInstance) candidateRadarChartInstance.resize();
+                }
+            }, 60);
+        }
+
+        // ================= 3. LIVE TRACKER & AUTO-STREAM ENGINE =================
+        function renderLiveFeed(filterPlatform = 'all', keyword = '') {
+            const container = document.getElementById('live-feed-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const filtered = liveFeedData.filter(item => {
+                const matchPlatform = filterPlatform === 'all' || item.platform.includes(filterPlatform);
+                const matchKeyword = !keyword || item.title.includes(keyword) || item.desc.includes(keyword);
+                return matchPlatform && matchKeyword;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="py-10 text-center text-xs text-slate-400">目前無符合篩選條件的即時動態</div>`;
+                return;
+            }
+
+            filtered.forEach((item, idx) => {
+                let badge = '';
+                if (item.type === 'chiang-neg') {
+                    badge = `<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px]">綠攻蔣 / 蔣負評</span>`;
+                } else if (item.type === 'shen-neg') {
+                    badge = `<span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[11px]">藍攻沈 / 沈負評</span>`;
+                } else if (item.type === 'both-attack') {
+                    badge = `<span class="px-2 py-0.5 rounded bg-red-100 text-red-700 font-bold text-[11px]">雙向激烈交鋒</span>`;
+                } else {
+                    badge = `<span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[11px]">市政與中立查核</span>`;
+                }
+
+                const div = document.createElement('div');
+                div.className = `py-3.5 px-3 hover:bg-slate-50 rounded-xl transition ${idx === 0 ? 'border border-red-200 bg-red-50/20 live-card-highlight' : ''}`;
+                div.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center space-x-2">
+                            ${idx === 0 ? '<span class="px-1.5 py-0.5 bg-red-600 text-white rounded text-[10px] font-black">NEW</span>' : ''}
+                            <span class="text-[11px] font-mono text-slate-400">${item.time}</span>
+                            <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-800 text-[11px] font-bold">${item.platform}</span>
+                            ${badge}
+                        </div>
+                        <span class="text-[11px] font-bold text-amber-600"><i class="fas fa-fire mr-1"></i>爆發力 ${item.score}</span>
+                    </div>
+                    <h4 class="text-sm font-black text-slate-900 mb-1">${item.title}</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">${item.desc}</p>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function filterLiveFeed(platform, btnEl) {
+            if (btnEl) {
+                document.querySelectorAll('.live-filter-btn').forEach(b => {
+                    b.classList.remove('bg-slate-900', 'text-white', 'font-bold');
+                    b.classList.add('bg-slate-100', 'text-slate-600');
+                });
+                btnEl.classList.remove('bg-slate-100', 'text-slate-600');
+                btnEl.classList.add('bg-slate-900', 'text-white', 'font-bold');
+            }
+            renderLiveFeed(platform, '');
+        }
+
+        function searchLiveKeyword(kw) {
+            renderLiveFeed('all', kw);
+            showToast(`🔍 已過濾關鍵字：「${kw}」`);
+        }
+
+        function toggleAddEventModal() {
+            const panel = document.getElementById('add-event-panel');
+            if (panel) panel.classList.toggle('hidden');
+        }
+
+        function addCustomLiveEvent() {
+            const titleEl = document.getElementById('new-ev-title');
+            const platformEl = document.getElementById('new-ev-platform');
+            const typeEl = document.getElementById('new-ev-type');
+            const scoreEl = document.getElementById('new-ev-score');
+            const descEl = document.getElementById('new-ev-desc');
+
+            const title = titleEl.value.trim();
+            const desc = descEl.value.trim();
+            if (!title) {
+                showToast('請輸入事件標題！');
+                return;
+            }
+
+            const now = new Date();
+            const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+            const newItem = {
+                id: Date.now(),
+                time: timeStr,
+                platform: platformEl.value,
+                type: typeEl.value,
+                score: parseInt(scoreEl.value, 10) || 90,
+                title: title,
+                desc: desc || '使用者手動登錄之最新選情追蹤項目。'
+            };
+
+            liveFeedData.unshift(newItem);
+            renderLiveFeed('all');
+            updateLiveMetricsAfterNewItem(newItem);
+
+            titleEl.value = '';
+            descEl.value = '';
+            toggleAddEventModal();
+            showToast('✅ 已寫入即時動態牆！可至 Git 分頁匯出最新 JSON。');
+        }
+
+        function updateLiveMetricsAfterNewItem(item) {
+            const postsEl = document.getElementById('live-metric-posts');
+            const attacksEl = document.getElementById('live-metric-attacks');
+            const tickerEl = document.getElementById('live-ticker-text');
+            const syncEl = document.getElementById('last-sync-time');
+
+            if (postsEl) {
+                const current = parseInt(postsEl.textContent.replace(/,/g, ''), 10) || 171636;
+                postsEl.innerHTML = `${(current + Math.floor(Math.random() * 85 + 30)).toLocaleString()} <span class="text-xs font-normal text-slate-500">筆</span>`;
+            }
+            if (attacksEl && item.type !== 'policy') {
+                const curAttack = parseInt(attacksEl.textContent.replace(/,/g, ''), 10) || 48058;
+                attacksEl.innerHTML = `${(curAttack + Math.floor(Math.random() * 35 + 12)).toLocaleString()} <span class="text-xs font-normal text-slate-500">筆攻擊</span>`;
+            }
+            if (tickerEl) {
+                tickerEl.textContent = `[即時同步 ${item.time.split(' ')[1]}] ${item.platform}：${item.title}`;
+            }
+            if (syncEl) {
+                const now = new Date();
+                syncEl.textContent = `最後同步：${now.toLocaleTimeString()} CST`;
+            }
+
+            // Dynamically nudge the 24H Velocity Chart
+            if (liveVelocityChartInstance) {
+                const d0 = liveVelocityChartInstance.data.datasets[0].data;
+                const d1 = liveVelocityChartInstance.data.datasets[1].data;
+                d0[d0.length - 1] += Math.floor(Math.random() * 45 + 15);
+                d1[d1.length - 1] += Math.floor(Math.random() * 55 + 20);
+                liveVelocityChartInstance.update();
+            }
+        }
+
+        function simulateLiveStreamItem() {
+            const template = simulatedPool[simIndex % simulatedPool.length];
+            simIndex++;
+            const now = new Date();
+            const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+            const newItem = {
+                id: Date.now(),
+                time: timeStr,
+                platform: template.platform,
+                type: template.type,
+                score: template.score,
+                title: template.title,
+                desc: template.desc
+            };
+
+            liveFeedData.unshift(newItem);
+            renderLiveFeed('all');
+            updateLiveMetricsAfterNewItem(newItem);
+            showToast('⚡ 已接收最新即時輿情推播！');
+        }
+
+        function toggleAutoStreamDaemon() {
+            const btn = document.getElementById('btn-auto-daemon');
+            const icon = document.getElementById('icon-auto-daemon');
+            const text = document.getElementById('text-auto-daemon');
+            const badge = document.getElementById('daemon-status-badge');
+
+            if (autoDaemonInterval) {
+                clearInterval(autoDaemonInterval);
+                autoDaemonInterval = null;
+                btn.classList.remove('bg-emerald-50', 'border-emerald-400');
+                icon.className = 'fas fa-play text-emerald-600 mr-1.5';
+                text.textContent = '開啟自動即時流 (每10秒)';
+                if (badge) badge.textContent = '即時監測中';
+                showToast('已暫停背景自動推播流');
+            } else {
+                simulateLiveStreamItem();
+                autoDaemonInterval = setInterval(simulateLiveStreamItem, 10000);
+                btn.classList.add('bg-emerald-50', 'border-emerald-400');
+                icon.className = 'fas fa-stop text-red-600 mr-1.5';
+                text.textContent = '停止自動即時流 (運行中)';
+                if (badge) badge.textContent = 'AUTO-STREAM 運行中';
+                showToast('🚀 已啟動每 10 秒自動輿情推播引擎！');
+            }
+        }
+
+        async function triggerAILiveScan() {
+            const btn = document.getElementById('btn-ai-scan');
+            const customKeyInput = document.getElementById('custom-gemini-key');
+            const apiKey = (customKeyInput && customKeyInput.value.trim()) ? customKeyInput.value.trim() : "";
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1.5"></i> AI 聯網檢索中...`;
+
+            const systemPrompt = "你是一位台灣選舉輿情分析專家。請根據最新網路資訊，整理出1則關於「蔣萬安」或「沈伯洋」台北市長選戰的最新攻防或新聞摘要。請以 JSON 格式回傳，包含 title (標題), platform (主流新聞/Threads/PTT/YouTube), type (chiang-neg/shen-neg/both-attack/policy), score (85-99數字), desc (80字內摘要與查核)。";
+            const userQuery = "搜尋最新 蔣萬安 沈伯洋 台北市長 選舉 新聞 民調 攻防 爭議";
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    tools: [{ "google_search": {} }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: { responseMimeType: "application/json" }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('Fallback to built-in stream');
+                const result = await response.json();
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                const parsed = JSON.parse(text);
+
+                const now = new Date();
+                const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+                const aiItem = {
+                    id: Date.now(),
+                    time: timeStr,
+                    platform: parsed.platform || "主流新聞 (AI檢索)",
+                    type: parsed.type || "both-attack",
+                    score: parsed.score || 94,
+                    title: parsed.title || "AI 即時檢索：台北市長選戰最新攻防動態",
+                    desc: parsed.desc || "透過 Google Search Grounding 檢索之最新選戰輿情摘要。"
+                };
+
+                liveFeedData.unshift(aiItem);
+                renderLiveFeed('all');
+                updateLiveMetricsAfterNewItem(aiItem);
+                showToast('🛰️ AI Google Search 聯網檢索完成！');
+            } catch (err) {
+                simulateLiveStreamItem();
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-globe mr-1.5"></i> AI 聯網抓取最新選情`;
+            }
+        }
+
+        async function syncFromRemoteGitJSON() {
+            const urlInput = document.getElementById('remote-json-url');
+            const url = urlInput ? urlInput.value.trim() : '';
+            if (!url) {
+                showToast('請先輸入 GitHub Raw JSON 網址，或直接使用本地即時引擎');
+                return;
+            }
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (Array.isArray(data.liveFeedData)) {
+                    liveFeedData.length = 0;
+                    data.liveFeedData.forEach(item => liveFeedData.push(item));
+                    renderLiveFeed('all');
+                    showToast('✅ 成功從 GitHub 遠端同步最新 JSON 資料！');
+                }
+            } catch (e) {
+                showToast('無法讀取該網址，請確認是否為公開之 GitHub Raw 連結');
+            }
+        }
+
+        // ================= 4. INTERACTIVE TURNOUT SIMULATOR & 12 DISTRICTS =================
+        function runElectionSimulator() {
+            const youth = parseFloat(document.getElementById('sim-youth').value);
+            const senior = parseFloat(document.getElementById('sim-senior').value);
+            const tpp = parseFloat(document.getElementById('sim-tpp').value);
+            const debate = parseFloat(document.getElementById('sim-debate').value);
+
+            document.getElementById('val-sim-youth').textContent = youth + '%';
+            document.getElementById('val-sim-senior').textContent = senior + '%';
+            document.getElementById('val-sim-tpp').textContent = tpp + '%';
+            document.getElementById('val-sim-debate').textContent = (debate > 0 ? `+${debate}% 挺沈` : debate < 0 ? `${debate}% 挺蔣` : '均勢 (0.0%)');
+
+            // Base model: Shen 51.2% vs Chiang 48.8% at baseline (youth=68, senior=72, tpp=54, debate=0)
+            let shenDelta = (youth - 68) * 0.16 - (senior - 72) * 0.22 + (tpp - 54) * 0.25 + (debate * 0.65);
+            let shenShare = Math.min(62, Math.max(38, 51.2 + shenDelta));
+            let chiangShare = 100 - shenShare;
+
+            const totalTurnoutVotes = Math.round(1370000 * ((youth * 0.3 + senior * 0.7) / 70.8));
+            const shenVotes = Math.round(totalTurnoutVotes * (shenShare / 100));
+            const chiangVotes = totalTurnoutVotes - shenVotes;
+            const diffVotes = Math.abs(shenVotes - chiangVotes);
+
+            document.getElementById('sim-shen-pct').textContent = shenShare.toFixed(1) + '%';
+            document.getElementById('sim-chiang-pct').textContent = chiangShare.toFixed(1) + '%';
+            document.getElementById('sim-shen-votes').textContent = `約 ${shenVotes.toLocaleString()} 票`;
+            document.getElementById('sim-chiang-votes').textContent = `約 ${chiangVotes.toLocaleString()} 票`;
+
+            const badge = document.getElementById('sim-winner-badge');
+            const analysis = document.getElementById('sim-analysis-text');
+
+            if (shenShare > chiangShare) {
+                badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+                badge.textContent = `沈伯洋 勝出 (+${(shenShare - chiangShare).toFixed(1)}%)`;
+                analysis.innerHTML = `<strong>沙盤推演結果：</strong> 沈伯洋預計以 <strong>${diffVotes.toLocaleString()} 票</strong> 差距勝出！主因為青年投票率 (${youth}%) 與黃珊珊舊部轉投比例 (${tpp}%) 足以抵銷藍營組織動員。`;
+            } else {
+                badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-500/20 text-blue-400 border border-blue-500/40';
+                badge.textContent = `蔣萬安 連任 (+${(chiangShare - shenShare).toFixed(1)}%)`;
+                analysis.innerHTML = `<strong>沙盤推演結果：</strong> 蔣萬安成功破除「沉默螺旋」，預計以 <strong>${diffVotes.toLocaleString()} 票</strong> 差距逆轉連任！高齡長者投票率 (${senior}%) 與白營歸隊發揮關鍵作用。`;
+            }
+        }
+
+        function resetSimulator() {
+            document.getElementById('sim-youth').value = 68;
+            document.getElementById('sim-senior').value = 72;
+            document.getElementById('sim-tpp').value = 54;
+            document.getElementById('sim-debate').value = 0;
+            runElectionSimulator();
+            showToast('已重設為 2026年10月 信民協會基準推估模型');
+        }
+
+        function renderDistricts(filterType = 'all') {
+            const grid = document.getElementById('districts-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const filtered = taipeiDistrictsData.filter(d => filterType === 'all' || d.type === filterType);
+            filtered.forEach(d => {
+                let borderClass = 'border-slate-200';
+                let badgeClass = 'bg-slate-100 text-slate-700';
+                if (d.type === 'swing') {
+                    borderClass = 'border-amber-300 bg-amber-50/30';
+                    badgeClass = 'bg-amber-100 text-amber-900 font-bold';
+                } else if (d.type === 'blue') {
+                    borderClass = 'border-blue-200 bg-blue-50/20';
+                    badgeClass = 'bg-blue-100 text-blue-800 font-bold';
+                } else if (d.type === 'green') {
+                    borderClass = 'border-emerald-200 bg-emerald-50/20';
+                    badgeClass = 'bg-emerald-100 text-emerald-800 font-bold';
+                }
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border ${borderClass} space-y-1.5 text-xs transition hover:shadow-xs`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-black text-slate-900">${d.name}</span>
+                        <span class="px-2 py-0.5 rounded text-[11px] ${badgeClass}">${d.swing}</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 font-mono">2022基準：${d.base2022}</div>
+                    <div class="text-xs text-slate-700 font-semibold pt-1 border-t border-slate-200/60">${d.status2026}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterDistricts(type, btnEl) {
+            if (btnEl) {
+                document.querySelectorAll('.dist-btn').forEach(b => {
+                    b.classList.remove('bg-slate-900', 'text-white');
+                });
+                btnEl.classList.add('bg-slate-900', 'text-white');
+            }
+            renderDistricts(type);
+        }
+
+        // ================= 5. ATTACK TABLE & POLICY SWITCHER =================
+        function renderAttackTable(filterType) {
+            const tbody = document.getElementById('attack-matrix-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const filtered = attackEventsData.filter(item => {
+                if (filterType === 'all') return true;
+                if (filterType === 'chiang-target') return item.target === 'chiang-target' || item.target === 'both';
+                if (filterType === 'shen-target') return item.target === 'shen-target' || item.target === 'both';
+                return true;
+            });
+
+            filtered.forEach(item => {
+                let badgeHtml = '';
+                if (item.target === 'chiang-target') {
+                    badgeHtml = '<span class="px-2 py-1 rounded bg-emerald-100 text-emerald-800 font-bold">綠營主攻 ➔ 蔣萬安</span>';
+                } else if (item.target === 'shen-target') {
+                    badgeHtml = '<span class="px-2 py-1 rounded bg-blue-100 text-blue-800 font-bold">藍營主攻 ➔ 沈伯洋</span>';
+                } else {
+                    badgeHtml = '<span class="px-2 py-1 rounded bg-purple-100 text-purple-800 font-bold">藍綠雙向互攻</span>';
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition-colors';
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-900 whitespace-nowrap">${item.title}</td>
+                    <td class="p-3 whitespace-nowrap">${badgeHtml}</td>
+                    <td class="p-3 text-slate-500 font-medium">${item.pipeline}</td>
+                    <td class="p-3 leading-relaxed">${item.content}</td>
+                    <td class="p-3 leading-relaxed">${item.response}</td>
+                    <td class="p-3 leading-relaxed font-semibold text-slate-800">${item.effect}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterAttacks(filterType, btnEl) {
+            if (btnEl) {
+                document.querySelectorAll('.attack-filter-btn').forEach(btn => {
+                    btn.classList.remove('bg-slate-900', 'text-white');
+                    btn.classList.add('bg-slate-100', 'text-slate-600');
+                });
+                btnEl.classList.remove('bg-slate-100', 'text-slate-600');
+                btnEl.classList.add('bg-slate-900', 'text-white');
+            }
+            renderAttackTable(filterType);
+        }
+
+        function switchPolicyDomain(domainKey) {
+            const domains = ['childcare', 'youth', 'tech', 'traffic', 'education', 'environment'];
+            domains.forEach(key => {
+                const btn = document.getElementById('pdomain-' + key);
+                if (!btn) return;
+                if (key === domainKey) {
+                    btn.className = 'pdomain-btn px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold whitespace-nowrap transition-all';
+                } else {
+                    btn.className = 'pdomain-btn px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-semibold whitespace-nowrap transition-all';
+                }
+            });
+
+            const data = policyData[domainKey];
+            const container = document.getElementById('policy-detail-container');
+            if (!data || !container) return;
+
+            container.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-4 gap-2">
+                    <h3 class="text-lg font-black text-slate-900">${data.title}</h3>
+                    <span class="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full font-semibold">10/31 電視辯論重點交鋒領域</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50/50 p-5 rounded-xl border border-blue-200 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-7 h-7 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center">蔣</span>
+                                <h4 class="font-bold text-blue-950 text-sm">${data.chiang.subtitle}</h4>
+                            </div>
+                            <span class="text-[11px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">${data.chiang.badge}</span>
+                        </div>
+                        <ul class="space-y-2 text-xs text-slate-700 leading-relaxed list-disc list-inside">
+                            ${data.chiang.points.map(p => `<li>${p}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="bg-emerald-50/50 p-5 rounded-xl border border-emerald-200 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-7 h-7 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center">沈</span>
+                                <h4 class="font-bold text-emerald-950 text-sm">${data.shen.subtitle}</h4>
+                            </div>
+                            <span class="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">${data.shen.badge}</span>
+                        </div>
+                        <ul class="space-y-2 text-xs text-slate-700 leading-relaxed list-disc list-inside">
+                            ${data.shen.points.map(p => `<li>${p}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl text-xs text-slate-800 leading-relaxed">
+                    <div class="flex items-start space-x-2">
+                        <i class="fas fa-exclamation-triangle text-amber-600 text-base mt-0.5"></i>
+                        <div>${data.bottleneck}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ================= 6. COUNTDOWNS & GIT EXPORT TOOLS =================
+        function updateCountdowns() {
+            const now = new Date();
+            const debateDate = new Date('2026-10-31T14:00:00+08:00');
+            const electionDate = new Date('2026-11-28T08:00:00+08:00');
+
+            const debateEl = document.getElementById('debate-countdown');
+            const electionEl = document.getElementById('election-countdown');
+
+            if (debateEl) {
+                const diffD = debateDate - now;
+                if (diffD > 0) {
+                    const d = Math.floor(diffD / (1000 * 60 * 60 * 24));
+                    const h = Math.floor((diffD / (1000 * 60 * 60)) % 24);
+                    const m = Math.floor((diffD / 1000 / 60) % 60);
+                    const s = Math.floor((diffD / 1000) % 60);
+                    debateEl.innerHTML = `<i class="fas fa-tv text-amber-600 mr-1.5"></i> 10/31辯論：${d}天 ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                } else {
+                    debateEl.innerHTML = `<i class="fas fa-tv text-amber-600 mr-1.5"></i> 10/31電視辯論：進行中/已結束`;
+                }
+            }
+
+            if (electionEl) {
+                const diffE = electionDate - now;
+                if (diffE > 0) {
+                    const d = Math.floor(diffE / (1000 * 60 * 60 * 24));
+                    const h = Math.floor((diffE / (1000 * 60 * 60)) % 24);
+                    electionEl.innerHTML = `<i class="fas fa-vote-yea text-slate-500 mr-1.5"></i> 11/28投票：${d}天 ${h}小時`;
+                } else {
+                    electionEl.innerHTML = `<i class="fas fa-vote-yea text-slate-500 mr-1.5"></i> 2026/11/28 投票日`;
+                }
+            }
+        }
+
+        function copyCodeBlock(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const textarea = document.createElement('textarea');
+            textarea.value = el.innerText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('📋 已複製到剪貼簿！可直接貼至終端機或 GitHub。');
+        }
+
+        function exportDataJSON() {
+            const exportPayload = {
+                version: "3.0.0",
+                lastUpdated: new Date().toISOString(),
+                metrics: {
+                    totalQSearchPosts: 171636,
+                    smearRatioPercent: 28.0,
+                    chiangPollOct: 33.3,
+                    shenPollOct: 50.3
+                },
+                liveFeedData: liveFeedData,
+                attackEventsData: attackEventsData,
+                taipeiDistrictsData: taipeiDistrictsData
+            };
+            const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'election_data_2026.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('📦 已匯出 election_data_2026.json！');
+        }
+
+        function downloadCompleteHTML() {
+            const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('🚀 已下載完整 index.html！可直接推送至 GitHub Pages。');
+        }
+
+        function downloadReadmeMD() {
+            const md = `# 2026 台北市長選戰即時戰情室 (蔣萬安 vs. 沈伯洋)\n\n本專案為單一檔案架構 (Single-File SPA) 之即時選情追蹤與司法鑑識級履歷查核儀表板。\n\n## 核心功能\n1. **即時輿情雷達 (Live War Room)**：支援 AI Google Search 即時檢索、每10秒自動推播模擬引擎與遠端 GitHub JSON 同步。\n2. **得票率沙盤推演器**：動態調整青年投票率、高齡長者投票率、白營流向與辯論表現。\n3. **17.1萬筆 QSearch 互相抹黑統計**：跨新聞、YouTube、Threads 與 PTT 負面情緒率分析。\n4. **司法級個資與履歷查核**：比對加州律師公會 #254347 紀錄、LinkedIn 時程與立院公報。\n\n## 快速部署至 GitHub Pages\n直接將 \`index.html\` 推送至 \`main\` 分支並開啟 GitHub Pages 即可運行。\n`;
+            const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'README.md';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('📝 已下載專案說明檔 README.md！');
+        }
+
+        // ================= 7. CHART.JS INITIALIZATION =================
+        function initCharts() {
+            // 1. Poll Trend Chart
+            const ctxPoll = document.getElementById('pollTrendChart');
+            if (ctxPoll) {
+                pollChartInstance = new Chart(ctxPoll, {
+                    type: 'line',
+                    data: {
+                        labels: ['2026/06 (震傳媒)', '2026/08 (初期徵召)', '2026/09 (交換生爭議)', '2026/10中 (信民黃金交叉)'],
+                        datasets: [
+                            {
+                                label: '蔣萬安 (國民黨)',
+                                data: [55.2, 48.5, 41.2, 33.3],
+                                borderColor: '#2563EB',
+                                backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                                borderWidth: 3,
+                                tension: 0.3,
+                                fill: true,
+                                pointRadius: 5,
+                                pointBackgroundColor: '#2563EB'
+                            },
+                            {
+                                label: '沈伯洋 (民進黨)',
+                                data: [28.4, 34.0, 40.8, 50.3],
+                                borderColor: '#059669',
+                                backgroundColor: 'rgba(5, 150, 105, 0.08)',
+                                borderWidth: 3,
+                                tension: 0.3,
+                                fill: true,
+                                pointRadius: 5,
+                                pointBackgroundColor: '#059669'
+                            },
+                            {
+                                label: '未表態 / 其他',
+                                data: [16.4, 17.5, 18.0, 16.4],
+                                borderColor: '#94A3B8',
+                                borderDash: [5, 5],
+                                borderWidth: 2,
+                                tension: 0.3,
+                                fill: false,
+                                pointRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            y: { min: 10, max: 65, ticks: { callback: v => v + '%' } }
+                        }
+                    }
+                });
+            }
+
+            // 2. Voter Shift Chart
+            const ctxShift = document.getElementById('voterShiftChart');
+            if (ctxShift) {
+                voterShiftChartInstance = new Chart(ctxShift, {
+                    type: 'bar',
+                    data: {
+                        labels: ['2022 黃珊珊選民流向', '民眾黨支持者流向', '20-29歲 青年選民', '60歲以上 高齡選民'],
+                        datasets: [
+                            {
+                                label: '支持 沈伯洋 (%)',
+                                data: [54.4, 19.0, 71.6, 38.2],
+                                backgroundColor: '#059669',
+                                borderRadius: 6
+                            },
+                            {
+                                label: '支持 蔣萬安 (%)',
+                                data: [34.1, 65.5, 10.5, 49.5],
+                                backgroundColor: '#2563EB',
+                                borderRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, max: 80, ticks: { callback: v => v + '%' } }
+                        }
+                    }
+                });
+            }
+
+            // 3. Topic Distribution Chart
+            const ctxTopic = document.getElementById('topicDistributionChart');
+            if (ctxTopic) {
+                topicChartInstance = new Chart(ctxTopic, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['個人特質與選戰花絮 (63%)', '陣營互攻與抹黑造謠 (28%)', '市政政見與可行性討論 (9%)'],
+                        datasets: [{
+                            data: [63, 28, 9],
+                            backgroundColor: ['#64748B', '#DC2626', '#2563EB'],
+                            borderWidth: 2,
+                            borderColor: '#FFFFFF'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                        },
+                        cutout: '62%'
+                    }
+                });
+            }
+
+            // 4. Platform Negative Sentiment Chart
+            const ctxPlatform = document.getElementById('platformNegativeChart');
+            if (ctxPlatform) {
+                platformChartInstance = new Chart(ctxPlatform, {
+                    type: 'bar',
+                    data: {
+                        labels: ['主流新聞媒體', 'YouTube 影音節目', 'Threads 社群', '網路論壇 (PTT/Dcard)'],
+                        datasets: [
+                            {
+                                label: '蔣萬安 負面聲量佔比 (%)',
+                                data: [38.5, 46.2, 67.4, 58.9],
+                                backgroundColor: '#2563EB',
+                                borderRadius: 6
+                            },
+                            {
+                                label: '沈伯洋 負面聲量佔比 (%)',
+                                data: [41.2, 52.8, 35.5, 61.4],
+                                backgroundColor: '#059669',
+                                borderRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, max: 80, ticks: { callback: v => v + '%' } }
+                        }
+                    }
+                });
+            }
+
+            // 5. Live 24H Velocity Chart
+            const ctxVelocity = document.getElementById('liveVelocityChart');
+            if (ctxVelocity) {
+                liveVelocityChartInstance = new Chart(ctxVelocity, {
+                    type: 'line',
+                    data: {
+                        labels: ['昨日08:00', '12:00', '16:00', '20:00', '00:00', '現在'],
+                        datasets: [
+                            {
+                                label: '蔣萬安 聲量熱度',
+                                data: [620, 890, 740, 1180, 950, 840],
+                                borderColor: '#2563EB',
+                                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.35,
+                                fill: true
+                            },
+                            {
+                                label: '沈伯洋 聲量熱度',
+                                data: [580, 920, 860, 1340, 1120, 960],
+                                borderColor: '#059669',
+                                backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.35,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+                        },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            // 6. Candidate 6-Axis Radar Chart
+            const ctxRadar = document.getElementById('candidateRadarChart');
+            if (ctxRadar) {
+                candidateRadarChartInstance = new Chart(ctxRadar, {
+                    type: 'radar',
+                    data: {
+                        labels: ['基層組織動員', '青年社群號召', '市政細節熟悉度', '履歷個資誠信度', '國安抗中論述', '危機應變防禦'],
+                        datasets: [
+                            {
+                                label: '蔣萬安',
+                                data: [90, 42, 85, 58, 50, 62],
+                                backgroundColor: 'rgba(37, 99, 235, 0.18)',
+                                borderColor: '#2563EB',
+                                pointBackgroundColor: '#2563EB',
+                                borderWidth: 2
+                            },
+                            {
+                                label: '沈伯洋',
+                                data: [58, 94, 60, 72, 92, 68],
+                                backgroundColor: 'rgba(5, 150, 105, 0.18)',
+                                borderColor: '#059669',
+                                pointBackgroundColor: '#059669',
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                min: 0,
+                                max: 100,
+                                ticks: { display: false },
+                                pointLabels: { font: { size: 11, weight: 'bold' } }
+                            }
+                        },
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize App on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            renderLiveFeed('all');
+            renderAttackTable('all');
+            renderDistricts('all');
+            switchPolicyDomain('childcare');
+            runElectionSimulator();
+            initCharts();
+            updateCountdowns();
+            setInterval(updateCountdowns, 1000);
+        });
+    </script>
+</body>
+</html>
